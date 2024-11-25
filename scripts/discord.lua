@@ -1,42 +1,43 @@
 local utils = require 'mp.utils'
+local msg = require("mp.msg")
+local opts = require("mp.options")
 
+-- Function to get the temporary path directory
 local function get_temp_path()
-    local directory_seperator = package.config:match("([^\n]*)\n?")
-    local example_temp_file_path = os.tmpname()
+    local dir_sep = package.config:match("([^\n]*)\n?")
+    local temp_file_path = os.tmpname()
 
-    -- remove generated temp file
-    pcall(os.remove, example_temp_file_path)
+    -- Remove generated temp file
+    pcall(os.remove, temp_file_path)
 
-    local seperator_idx = example_temp_file_path:reverse():find(directory_seperator)
-    local temp_path_length = #example_temp_file_path - seperator_idx
-
-    return example_temp_file_path:sub(1, temp_path_length)
+    local sep_idx = temp_file_path:reverse():find(dir_sep)
+    return temp_file_path:sub(1, #temp_file_path - sep_idx)
 end
 
-tempDir = get_temp_path()
-
-function join_paths(...)
-    local arg={...}
-    path = ""
-    for i,v in ipairs(arg) do
+-- Function to join paths
+local function join_paths(...)
+    local path = ""
+    for _, v in ipairs({...}) do
         path = utils.join_path(path, tostring(v))
     end
-    return path;
+    return path
 end
 
-ppid = utils.getpid()
+-- Initialize temp directory and pid
+local tempDir = get_temp_path()
+local ppid = utils.getpid()
+
+-- Create socket directory
 os.execute("mkdir " .. join_paths(tempDir, "mpvSockets") .. " 2>/dev/null")
 mp.set_property("options/input-ipc-server", join_paths(tempDir, "mpvSockets", ppid))
 
-function shutdown_handler()
-        os.remove(join_paths(tempDir, "mpvSockets", ppid))
+-- Shutdown handler to remove socket on exit
+local function shutdown_handler()
+    os.remove(join_paths(tempDir, "mpvSockets", ppid))
 end
 mp.register_event("shutdown", shutdown_handler)
 
-local msg = require("mp.msg")
-local opts = require("mp.options")
-local utils = require("mp.utils")
-
+-- Load and read configuration options
 local options = {
     key = "D",
     active = true,
@@ -47,35 +48,41 @@ local options = {
 
 opts.read_options(options, "discord")
 
+-- Validate binary path configuration
 if options.binary_path == "" then
     msg.fatal("Missing binary path in config file.")
     os.exit(1)
 end
 
-function file_exists(path)
+-- Check if file exists
+local function file_exists(path)
     local f = io.open(path, "r")
-    if f ~= nil then
+    if f then
         io.close(f)
         return true
-    else
-        return false
     end
+    return false
 end
 
+-- Ensure binary file exists
 if not file_exists(options.binary_path) then
     msg.fatal("The specified binary path does not exist.")
     os.exit(1)
 end
 
+-- Print version info
 local version = "1.6.1"
 msg.info(("mpv-discord v%s by tnychn"):format(version))
 
+-- Define socket path
 local socket_path = join_paths(tempDir, "mpvSockets", ppid)
 
-local cmd = nil
+-- Command to start subprocess
+local cmd
 
+-- Start subprocess function
 local function start()
-    if cmd == nil then
+    if not cmd then
         cmd = mp.command_native_async({
             name = "subprocess",
             playback_only = false,
@@ -85,52 +92,59 @@ local function start()
                 options.client_id,
             },
         }, function() end)
-        msg.info("launched subprocess")
+        msg.info("Launched subprocess")
         mp.osd_message("Discord Rich Presence: Started")
     end
 end
 
-function stop()
-    mp.abort_async_command(cmd)
-    cmd = nil
-    msg.info("aborted subprocess")
-    mp.osd_message("Discord Rich Presence: Stopped")
+-- Stop subprocess function
+local function stop()
+    if cmd then
+        mp.abort_async_command(cmd)
+        cmd = nil
+        msg.info("Aborted subprocess")
+        mp.osd_message("Discord Rich Presence: Stopped")
+    end
 end
 
+-- Register event to start on file load
 if options.active then
     mp.register_event("file-loaded", start)
 end
 
+-- Keybinding to toggle Discord
 mp.add_key_binding(options.key, "toggle-discord", function()
-    if cmd ~= nil then
+    if cmd then
         stop()
     else
         start()
     end
 end)
 
+-- Register shutdown handler
 mp.register_event("shutdown", function()
-    if cmd ~= nil then
+    if cmd then
         stop()
     end
 end)
 
+-- Autohide functionality based on pause status
 if options.autohide_threshold > 0 then
-    local timer = nil
+    local timer
     local t = options.autohide_threshold
     mp.observe_property("pause", "bool", function(_, value)
-        if value == true then
+        if value then
             timer = mp.add_timeout(t, function()
-                if cmd ~= nil then
+                if cmd then
                     stop()
                 end
             end)
         else
-            if timer ~= nil then
+            if timer then
                 timer:kill()
                 timer = nil
             end
-            if options.active and cmd == nil then
+            if options.active and not cmd then
                 start()
             end
         end
