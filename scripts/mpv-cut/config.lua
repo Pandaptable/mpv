@@ -85,7 +85,6 @@ ACTIONS.ENCODE = function(d)
 	}, function() print("Done") end)
 end
 
--- for copying encode command for editing
 ACTIONS.COPY_ENCODE = function(d)
 	local args = {
 		"ffmpeg",
@@ -135,7 +134,6 @@ ACTIONS.ENCODE_AUDIO = function(d)
 	}, function() print("Done") end)
 end
 
--- for copying audio command for editing
 ACTIONS.COPY_AUDIO = function(d)
 	local args = {
 		"ffmpeg",
