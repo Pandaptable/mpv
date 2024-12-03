@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 local opts = {
     drag_to_pan_margin = 50,
     drag_to_pan_move_if_full_view=true,
@@ -8,6 +9,7 @@ local opts = {
     cursor_centric_zoom_auto_center = true,
     cursor_centric_zoom_dezoom_if_full_view = false,
 }
+local mp = require 'mp'
 local options = require 'mp.options'
 local msg = require 'mp.msg'
 local assdraw = require 'mp.assdraw'
@@ -274,4 +276,3 @@ mp.add_key_binding(nil, "align-border", align_border)
 mp.add_key_binding(nil, "pan-image", pan_image)
 mp.add_key_binding(nil, "rotate-video", rotate_video)
 mp.add_key_binding(nil, "reset-pan-if-visible", reset_pan_if_visible)
-mp.add_key_binding(nil, "force-print-filename", force_print_filename)

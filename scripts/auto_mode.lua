@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 
 --[[
 
@@ -18,7 +19,9 @@
 
 	The configuration is done in code.
 
-]]--
+]] --
+
+local mp = require 'mp'
 
 
 ----- start config

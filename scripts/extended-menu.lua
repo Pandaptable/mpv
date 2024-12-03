@@ -1,3 +1,4 @@
+---@diagnostic disable: redundant-parameter
 local mp = require 'mp'
 local utils = require 'mp.utils'
 local assdraw = require 'mp.assdraw'

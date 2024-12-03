@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, undefined-global, duplicate-set-field, unbalanced-assignments, inject-field, lowercase-global
 -- mpv-osc-morden by maoiscat
 -- email:valarmor@163.com
 -- https://github.com/maoiscat/mpv-osc-morden
@@ -12,7 +13,7 @@
 -- https://github.com/1-minute-to-midnight/mpv-modern-x-compact/
 
 local ipairs,loadfile,pairs,pcall,tonumber,tostring = ipairs,loadfile,pairs,pcall,tonumber,tostring
-local debug,io,math,os,string,table,utf8 = debug,io,math,os,string,table,utf8
+local debug,io,math,os,string,table = debug,io,math,os,string,table
 local min,max,floor,ceil,huge = math.min,math.max,math.floor,math.ceil,math.huge
 local mp      = require 'mp'
 local assdraw = require 'mp.assdraw'

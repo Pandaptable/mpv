@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch, lowercase-global
 -- sponsorblock_minimal.lua
 --
 -- This script skips sponsored segments of YouTube videos

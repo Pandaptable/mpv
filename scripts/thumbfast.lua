@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- thumbfast.lua
 --
 -- High-performance on-the-fly thumbnailer

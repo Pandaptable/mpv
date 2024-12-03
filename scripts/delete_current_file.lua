@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 
 --[[
 
@@ -29,6 +30,7 @@
 
 ]]--
 
+local mp = require 'mp'
 key_bindings = {}
 
 function file_exists(name)

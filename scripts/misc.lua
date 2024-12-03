@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 
 --[[
 
@@ -98,7 +99,7 @@
     In input.conf add:
     ctrl+q script-message-to misc quick-bookmark
 
- 
+
 
     Playlist Next/Prev
     ------------------
@@ -166,6 +167,7 @@ local o = {
     quick_bookmark_folder = "~~/script-settings/quick-bookmark/",
 }
 
+local mp = require "mp"
 local opt = require "mp.options"
 opt.read_options(o)
 
@@ -448,7 +450,7 @@ function loadfiles(mode)
         local ps_code = [[
             Add-Type -AssemblyName System.Windows.Forms
             $containsFiles = [Windows.Forms.Clipboard]::ContainsFileDropList()
-            
+
             if ($containsFiles) {
                 [Windows.Forms.Clipboard]::GetFileDropList() -join [Environment]::NewLine
             } else {

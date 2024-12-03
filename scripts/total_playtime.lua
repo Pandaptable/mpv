@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch, undefined-global, lowercase-global
 --~ Shows total playtime of current playlist.
 --~ If number of items in playlist didn't change since last calculation - it doesn't probe files anew.
 --~ requires ffprobe (ffmpeg)

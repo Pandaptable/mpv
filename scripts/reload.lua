@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- reload.lua
 --
 -- When an online video is stuck buffering or got very slow CDN

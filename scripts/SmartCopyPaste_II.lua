@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global, param-type-mismatch, cast-local-type, need-check-nil, redundant-parameter, lowercase-global
 -- Copyright (c) 2022, Eisa AlAwadhi
 -- License: BSD 2-Clause License
 -- Creator: Eisa AlAwadhi
@@ -17,7 +18,7 @@ local o = {
 	mac_paste = 'pbpaste', --paste command that will be used in MAC. OR write a different command
 	windows_copy = 'powershell', --'powershell' is for using windows powershell to copy. OR write the copy command, e.g: ' clip'
 	windows_paste = 'powershell', --'powershell' is for using windows powershell to paste. OR write the paste command
-	auto_run_list_idle = 'none', --Auto run the list when opening mpv and there is no video / file loaded. 'none' for disabled. Or choose between: 'all', 'copy', 'paste', 'recents', 'distinct', 'protocols', 'fileonly', 'titleonly', 'timeonly', 'keywords'.	
+	auto_run_list_idle = 'none', --Auto run the list when opening mpv and there is no video / file loaded. 'none' for disabled. Or choose between: 'all', 'copy', 'paste', 'recents', 'distinct', 'protocols', 'fileonly', 'titleonly', 'timeonly', 'keywords'.
 	toggle_idlescreen = false, --hides OSC idle screen message when opening and closing menu (could cause unexpected behavior if multiple scripts are triggering osc-idlescreen off)
 	resume_offset = -0.65, --change to 0 so item resumes from the exact position, or decrease the value so that it gives you a little preview before loading the resume point
 	osd_messages = true, --true is for displaying osd messages when actions occur. Change to false will disable all osd messages generated from this script
@@ -131,7 +132,7 @@ local o = {
 	text_cursor_border = 0.7, --Black border size for highlighted text in list
 	text_highlight_pre_text = '✅ ', --Pre text for highlighted multi-select item
 	search_color_typing = 'ffffaa', --Search color when in typing mode
-	search_color_not_typing = '56ffaa', --Search color when not in typing mode and it is active	
+	search_color_not_typing = '56ffaa', --Search color when not in typing mode and it is active
 	header_color = '56ffaa', --Header color in BGR hexadecimal
 	header_scale = 55, --Header text size for the list
 	header_border = 0.8, --Black border size for the Header of list
@@ -337,13 +338,13 @@ end
 function contain_value(tab, val)
 	if not tab then return msg.error('check value passed') end
 	if not val then return msg.error('check value passed') end
-	
+
 	for index, value in ipairs(tab) do
 		if value.match(string.lower(val), string.lower(value)) then
 			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -364,7 +365,7 @@ function has_value(tab, val, array2d)
 			end
 		end
 	end
-	
+
 	return false
 end
 
@@ -378,7 +379,7 @@ function format_time(seconds, sep, decimals, style)
 		return math.floor(a / b), a % b
 	end
 	decimals = decimals == nil and 3 or decimals
-	
+
 	local s = seconds
 	local h, s = divmod(s, 60*60)
 	local m, s = divmod(s, 60)
@@ -390,7 +391,7 @@ function format_time(seconds, sep, decimals, style)
 			seconds = math.floor(seconds)
 		end
 	end
-	
+
 	if not style or style == '' or style == 'default' then
 		local second_format = string.format("%%0%d.%df", 2+(decimals > 0 and decimals+1 or 0), decimals)
 		sep = sep and sep or ":"
@@ -414,12 +415,12 @@ end
 function get_file()
 	local path = mp.get_property('path')
 	if not path then return end
-	
+
 	local length = (mp.get_property_number('duration') or 0)
-	
+
 	local title = mp.get_property('media-title'):gsub("\"", "")
-	
-	
+
+
 	if starts_protocol(o.logging_protocols, path) and o.prefer_filename_over_title == 'protocols' then
 		title = mp.get_property('filename'):gsub("\"", "")
 	elseif not starts_protocol(o.logging_protocols, path) and o.prefer_filename_over_title == 'local' then
@@ -427,7 +428,7 @@ function get_file()
 	elseif o.prefer_filename_over_title == 'all' then
 		title = mp.get_property('filename'):gsub("\"", "")
 	end
-	
+
 	return path, title, length
 end
 
@@ -436,9 +437,9 @@ function bind_keys(keys, name, func, opts)
 		mp.add_forced_key_binding(keys, name, func, opts)
 		return
 	end
-	
+
 	for i = 1, #keys do
-		if i == 1 then 
+		if i == 1 then
 			mp.add_forced_key_binding(keys[i], name, func, opts)
 		else
 			mp.add_forced_key_binding(keys[i], name .. i, func, opts)
@@ -451,7 +452,7 @@ function unbind_keys(keys, name)
 		mp.remove_key_binding(name)
 		return
 	end
-	
+
 	for i = 1, #keys do
 		if i == 1 then
 			mp.remove_key_binding(name)
@@ -519,7 +520,7 @@ function list_sort(tab, sort)
 			table.sort(tab, function(a, b) return tostring(a['found_path']):gsub("%.?%d+", padnum) .. ("%3d"):format(#b) < tostring(b['found_path']):gsub("%.?%d+", padnum) .. ("%3d"):format(#a) end)
 		end
 	end
-	
+
 	return tab
 end
 
@@ -532,7 +533,7 @@ function parse_header(string)
 		osd_search_color = string.format("{\\1c&H%s}", o.search_color_not_typing)
 	end
 	local osd_msg_end = "{\\1c&HFFFFFF}"
-	
+
 	string = string:gsub("%%total%%", #list_contents)
 		:gsub("%%cursor%%", list_cursor)
 
@@ -545,7 +546,7 @@ function parse_header(string)
 		:gsub("%%prefilter%%", '')
 		:gsub("%%afterfilter%%", '')
 	end
-	
+
 	local list_total_duration = 0
 	if string:match('%listduration%%') then
 		list_total_duration = get_total_duration('found_time')
@@ -554,7 +555,7 @@ function parse_header(string)
 		else
 			string = string:gsub("%%listduration%%", '')
 		end
-	end	
+	end
 	if list_total_duration > 0 then
 		string = string:gsub("%%prelistduration%%", o.header_list_duration_pre_text)
 		:gsub("%%afterlistduration%%", o.header_list_duration_after_text)
@@ -562,7 +563,7 @@ function parse_header(string)
 		string = string:gsub("%%prelistduration%%", '')
 		:gsub("%%afterlistduration%%", '')
 	end
-	
+
 	local list_total_length = 0
 	if string:match('%listlength%%') then
 		list_total_length = get_total_duration('found_length')
@@ -571,7 +572,7 @@ function parse_header(string)
 		else
 			string = string:gsub("%%listlength%%", '')
 		end
-	end	
+	end
 	if list_total_length > 0 then
 		string = string:gsub("%%prelistlength%%", o.header_list_length_pre_text)
 		:gsub("%%afterlistlength%%", o.header_list_length_after_text)
@@ -579,7 +580,7 @@ function parse_header(string)
 		string = string:gsub("%%prelistlength%%", '')
 		:gsub("%%afterlistlength%%", '')
 	end
-	
+
 	local list_total_remaining = 0
 	if string:match('%listremaining%%') then
 		list_total_remaining = get_total_duration('found_remaining')
@@ -588,7 +589,7 @@ function parse_header(string)
 		else
 			string = string:gsub("%%listremaining%%", '')
 		end
-	end	
+	end
 	if list_total_remaining > 0 then
 		string = string:gsub("%%prelistremaining%%", o.header_list_remaining_pre_text)
 		:gsub("%%afterlistremaining%%", o.header_list_remaining_after_text)
@@ -596,7 +597,7 @@ function parse_header(string)
 		string = string:gsub("%%prelistremaining%%", '')
 		:gsub("%%afterlistremaining%%", '')
 	end
-	
+
 	if #list_highlight_cursor > 0 then
 		string = string:gsub("%%highlight%%", #list_highlight_cursor)
 		:gsub("%%prehighlight%%", o.header_highlight_pre_text)
@@ -606,7 +607,7 @@ function parse_header(string)
 		:gsub("%%prehighlight%%", '')
 		:gsub("%%afterhighlight%%", '')
 	end
-	
+
 	if sortName and sortName ~= o.header_sort_hide_text then
 		string = string:gsub("%%sort%%", sortName)
 		:gsub("%%presort%%", o.header_sort_pre_text)
@@ -616,15 +617,15 @@ function parse_header(string)
 		:gsub("%%presort%%", '')
 		:gsub("%%aftersort%%", '')
 	end
-	
+
 	if search_active then
 		local search_string_osd = search_string
 		if search_string_osd ~= '' then
 			search_string_osd = search_string:gsub('%%', '%%%%%%%%'):gsub('\\', '\\​'):gsub('{', '\\{')
 		end
-	
+
 		string = string:gsub("%%search%%", osd_search_color..search_string_osd..osd_header_color)
-		:gsub("%%presearch%%", o.header_search_pre_text)	
+		:gsub("%%presearch%%", o.header_search_pre_text)
 		:gsub("%%aftersearch%%", o.header_search_after_text)
 	else
 		string = string:gsub("%%search%%", '')
@@ -638,61 +639,61 @@ end
 function get_list_contents(filter, sort)
 	if not filter then filter = filterName end
 	if not sort then sort = get_list_sort(filter) end
-	
+
 	local current_sort
 
 	local filtered_table = {}
 
 	local prev_list_contents
-	if list_contents ~= nil and list_contents[1] then 
+	if list_contents ~= nil and list_contents[1] then
 		prev_list_contents = list_contents
 	else
 		prev_list_contents = read_log_table()
 	end
-	
+
 	list_contents = read_log_table()
 	if not list_contents and not search_active or not list_contents[1] and not search_active then return end
 	current_sort = 'added-asc'
-	
+
 	if filter == 'copy' then
 		for i = 1, #list_contents do
 			if list_contents[i].found_copy then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		if not sort then active_sort = o.sort_copy_filter end
 		if active_sort ~= 'none' or active_sort ~= '' then
 			list_sort(filtered_table, active_sort)
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'paste' then
 		for i = 1, #list_contents do
 			if list_contents[i].found_paste then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		if not sort then active_sort = o.sort_paste_filter end
 		if active_sort ~= 'none' or active_sort ~= '' then
 			list_sort(filtered_table, active_sort)
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'recents' then
 		table.sort(list_contents, function(a, b) return a['found_sequence'] < b['found_sequence'] end)
 		local unique_values = {}
 		local list_total = #list_contents
-		
+
 		if filePath == list_contents[#list_contents].found_path and tonumber(list_contents[#list_contents].found_time) == 0 then
 			list_total = list_total -1
 		end
-	
+
 		for i = list_total, 1, -1 do
 			if not has_value(unique_values, list_contents[i].found_path) then
 				table.insert(unique_values, list_contents[i].found_path)
@@ -700,20 +701,20 @@ function get_list_contents(filter, sort)
 			end
 		end
 		table.sort(filtered_table, function(a, b) return a['found_sequence'] < b['found_sequence'] end)
-		
+
 		list_contents = filtered_table
-	
+
 	end
-	
+
 	if filter == 'distinct' then
 		table.sort(list_contents, function(a, b) return a['found_sequence'] < b['found_sequence'] end)
 		local unique_values = {}
 		local list_total = #list_contents
-		
+
 		if filePath == list_contents[#list_contents].found_path and tonumber(list_contents[#list_contents].found_time) == 0 then
 			list_total = list_total -1
 		end
-	
+
 		for i = list_total, 1, -1 do
 			if list_contents[i].found_directory and not has_value(unique_values, list_contents[i].found_directory) and not starts_protocol(protocols, list_contents[i].found_path) then
 				table.insert(unique_values, list_contents[i].found_directory)
@@ -721,81 +722,81 @@ function get_list_contents(filter, sort)
 			end
 		end
 		table.sort(filtered_table, function(a, b) return a['found_sequence'] < b['found_sequence'] end)
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'fileonly' then
 		for i = 1, #list_contents do
 			if tonumber(list_contents[i].found_time) == 0 then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'timeonly' then
 		for i = 1, #list_contents do
 			if tonumber(list_contents[i].found_time) > 0 then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'titleonly' then
 		for i = 1, #list_contents do
 			if list_contents[i].found_title then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'protocols' then
 		for i = 1, #list_contents do
 			if starts_protocol(o.logging_protocols, list_contents[i].found_path) then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'keywords' then
 		for i = 1, #list_contents do
 			if contain_value(o.keywords_filter_list, list_contents[i].found_line) then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if filter == 'playing' then
 		for i = 1, #list_contents do
 			if list_contents[i].found_path == filePath then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
 	end
-	
+
 	if search_active and search_string ~= '' then
 		local filtered_table = {}
-		
+
 		local search_query = ''
 		for search in search_string:gmatch("[^%s]+") do
 			search_query = search_query..'.-'..esc_string(search)
 		end
-		
+
 		local contents_string = ''
 		for i = 1, #list_contents do
-			
+
 			if o.search_behavior == 'specific' then
 				if string.lower(list_contents[i].found_path):match(string.lower(search_query)) then
 					table.insert(filtered_table, list_contents[i])
@@ -808,32 +809,32 @@ function get_list_contents(filter, sort)
 				end
 			elseif o.search_behavior == 'any' then
 				contents_string = list_contents[i].found_datetime..(list_contents[i].found_title or '')..list_contents[i].found_path
-				if tonumber(list_contents[i].found_time) > 0 then 
+				if tonumber(list_contents[i].found_time) > 0 then
 					contents_string = contents_string..format_time(list_contents[i].found_time, o.osd_time_format[3], o.osd_time_format[2], o.osd_time_format[1])
 				end
 			elseif o.search_behavior == 'any-notime' then
 				contents_string = list_contents[i].found_datetime..(list_contents[i].found_title or '')..list_contents[i].found_path
 			end
-			
+
 			if string.lower(contents_string):match(string.lower(search_query)) then
 				table.insert(filtered_table, list_contents[i])
 			end
 		end
-		
+
 		list_contents = filtered_table
-		
+
 	end
-	
+
 	if sort ~= current_sort then
 		list_sort(list_contents, sort)
 	end
-	
+
 	if not list_contents and not search_active or not list_contents[1] and not search_active then return end
 end
 
 function get_list_sort(filter)
 	if not filter then filter = filterName end
-	
+
 	local sort
 	for i=1, #o.list_filters_sort do
 		if o.list_filters_sort[i][1] == filter then
@@ -841,11 +842,11 @@ function get_list_sort(filter)
 			break
 		end
 	end
-	
+
 	if not sort and has_value(available_sorts, o.list_default_sort) then sort = o.list_default_sort end
-	
+
 	if not sort then sort = 'added-asc' end
-	
+
 	return sort
 end
 
@@ -860,28 +861,28 @@ function draw_list()
 	local osd_header = string.format("{\\an%f}{\\fscx%f}{\\fscy%f}{\\bord%f}{\\1c&H%s}", o.list_alignment, o.header_scale, o.header_scale, o.header_border, o.header_color)
 	local osd_msg_end = "{\\1c&HFFFFFF}"
 	local osd_time_type = 'found_time'
-	
+
 	if o.text_time_type == 'length' then
 		osd_time_type = 'found_length'
 	elseif o.text_time_type == 'remaining' then
 		osd_time_type = 'found_remaining'
 	end
-	
+
 	if o.header_text ~= '' then
 		osd_msg = osd_msg .. osd_header .. parse_header(o.header_text)
 		osd_msg = osd_msg .. "\\h\\N\\N" .. osd_msg_end
 	end
-	
+
 	if search_active and not list_contents[1] then
 		osd_msg = osd_msg .. 'No search results found' .. osd_msg_end
 	end
-	
+
 	if o.list_middle_loader then
 		list_start = list_cursor - math.floor(o.list_show_amount / 2)
 	else
 		list_start = list_cursor - o.list_show_amount
 	end
-	
+
 	local showall = false
 	local showrest = false
 	if list_start < 0 then list_start = 0 end
@@ -898,59 +899,59 @@ function draw_list()
 	end
 	for i = list_start, list_start + o.list_show_amount - 1, 1 do
 		if i == #list_contents then break end
-		
+
 		if o.show_paths then
 			p = list_contents[#list_contents - i].found_path or list_contents[#list_contents - i].found_name or ""
 		else
 			p = list_contents[#list_contents - i].found_name or list_contents[#list_contents - i].found_path or ""
 		end
-		
+
 		if o.slice_longfilenames and p:len() > o.slice_longfilenames_amount then
 			p = p:sub(1, o.slice_longfilenames_amount) .. "..."
 		end
-		
+
 		if o.quickselect_0to9_keybind and o.list_show_amount <= 10 and o.quickselect_0to9_pre_text then
 			key = 1 + key
 			if key == 10 then key = 0 end
 			osd_key = '(' .. key .. ')  '
 		end
-		
+
 		if o.show_item_number then
 			osd_index = (i + 1) .. '. '
 		end
-		
+
 		if i + 1 == list_cursor then
 			osd_color = osd_cursor
 		else
 			osd_color = osd_text
 		end
-		
+
 		for j = 1, #list_highlight_cursor do
 			if list_highlight_cursor[j] and list_highlight_cursor[j][1] == i+1 then
 				osd_msg = osd_msg..osd_color..esc_string(o.text_highlight_pre_text)
 			end
 		end
-		
+
 		osd_msg = osd_msg .. osd_color .. osd_key .. osd_index .. p
-		
+
 		if list_contents[#list_contents - i][osd_time_type] and tonumber(list_contents[#list_contents - i][osd_time_type]) > 0 then
 			osd_msg = osd_msg .. o.time_seperator .. format_time(list_contents[#list_contents - i][osd_time_type], o.list_time_format[3], o.list_time_format[2], o.list_time_format[1])
 		end
-		
+
 		if list_contents[#list_contents - i].found_copy then
 			osd_msg = osd_msg .. o.copy_seperator
 		end
-		
+
 		if list_contents[#list_contents - i].found_paste then
 			osd_msg = osd_msg .. o.paste_seperator
 		end
-		
+
 		osd_msg = osd_msg .. '\\h\\N\\N' .. osd_msg_end
-		
+
 		if i == list_start + o.list_show_amount - 1 and not showall and not showrest then
 			osd_msg = osd_msg .. o.list_sliced_suffix
 		end
-	
+
 	end
 	mp.set_osd_ass(0, 0, osd_msg)
 end
@@ -972,7 +973,7 @@ end
 function display_list(filter, sort, action)
 	if not filter or not has_value(available_filters, filter) then filter = 'all' end
 	if not sortName then sortName = get_list_sort(filter) end
-	
+
 	local prev_sort = sortName
 	if not has_value(available_sorts, prev_sort) then prev_sort = get_list_sort() end
 
@@ -981,9 +982,9 @@ function display_list(filter, sort, action)
 
 	local prev_filter = filterName
 	filterName = filter
-	
+
 	get_list_contents(filter, sort)
-	
+
 	if action ~= 'hide-osd' then
 		if not list_contents or not list_contents[1] then
 			list_empty_error_msg()
@@ -993,17 +994,17 @@ function display_list(filter, sort, action)
 		end
 	end
 	if not list_contents and not search_active or not list_contents[1] and not search_active then return end
-	
+
 	if not has_value(o.filters_and_sequence, filter) then
 		table.insert(o.filters_and_sequence, filter)
 	end
-	
+
 	local insert_new = false
-	
+
 	local trigger_close_list = false
 	local trigger_initial_list = false
-	
-	
+
+
 	if not list_pages or not list_pages[1] then
 		table.insert(list_pages, {filter, 1, 1, {}, sort})
 	else
@@ -1017,9 +1018,9 @@ function display_list(filter, sort, action)
 			end
 		end
 	end
-	
+
 	if insert_new then table.insert(list_pages, {filter, 1, 1, {}, sort}) end
-	
+
 	for i = 1, #list_pages do
 		if not search_active and list_pages[i][1] == prev_filter then
 			list_pages[i][2] = list_cursor
@@ -1032,22 +1033,22 @@ function display_list(filter, sort, action)
 		if list_pages[i][3] == 2 and filter == 'all' and o.main_list_keybind_twice_exits then
 			trigger_close_list = true
 		elseif list_pages[i][3] == 2 and list_pages[1][1] == filter then
-			trigger_close_list = true		
+			trigger_close_list = true
 		elseif list_pages[i][3] == 2 then
 			trigger_initial_list = true
 		end
 	end
-	
+
 	if trigger_initial_list then
 		display_list(list_pages[1][1], nil, 'hide-osd')
 		return
 	end
-	
+
 	if trigger_close_list then
 		list_close_and_trash_collection()
 		return
 	end
-	
+
 	if not search_active then get_page_properties(filter) else update_search_results('','') end
 	draw_list()
 	if utils.shared_script_property_set then
@@ -1069,24 +1070,24 @@ function select(pos, action)
 			return
 		end
 	end
-	
+
 	local list_cursor_temp = list_cursor + pos
 	if list_cursor_temp > 0 and list_cursor_temp <= #list_contents then
 		list_cursor = list_cursor_temp
-		
+
 		if action == 'highlight' then
 			if not has_value(list_highlight_cursor, list_cursor, 1) then
 				if pos > -1 then
 					for i = pos, 1, -1 do
 						if not has_value(list_highlight_cursor, list_cursor-i, 1) then
 							table.insert(list_highlight_cursor, {list_cursor-i, list_contents[#list_contents+1+i - list_cursor]})
-						end 
+						end
 					end
 				else
 					for i = pos, -1, 1 do
 						if not has_value(list_highlight_cursor, list_cursor-i, 1) then
 							table.insert(list_highlight_cursor, {list_cursor-i, list_contents[#list_contents+1+i - list_cursor]})
-						end 
+						end
 					end
 				end
 				table.insert(list_highlight_cursor, {list_cursor, list_contents[#list_contents+1 - list_cursor]})
@@ -1116,7 +1117,7 @@ function select(pos, action)
 			end
 		end
 	end
-	
+
 	if o.loop_through_list then
 		if list_cursor_temp > #list_contents then
 			list_cursor = 1
@@ -1124,7 +1125,7 @@ function select(pos, action)
 			list_cursor = #list_contents
 		end
 	end
-	
+
 	draw_list()
 end
 
@@ -1165,7 +1166,7 @@ function list_page_up(action)
 
 	if search_active and o.search_not_typing_smartly then
 		list_search_not_typing_mode(true)
-	end	
+	end
 end
 
 function list_page_down(action)
@@ -1187,18 +1188,18 @@ function list_page_down(action)
 
 	if search_active and o.search_not_typing_smartly then
 		list_search_not_typing_mode(true)
-	end	
+	end
 end
 
 function list_highlight_all()
 	get_list_contents(filterName)
 	if not list_contents or not list_contents[1] then return end
-	
+
 	if #list_highlight_cursor < #list_contents then
 		for i=1, #list_contents do
 			if not has_value(list_highlight_cursor, i, 1) then
 				table.insert(list_highlight_cursor, {i, list_contents[#list_contents+1-i]})
-			end 
+			end
 		end
 		select(0)
 	else
@@ -1263,7 +1264,7 @@ function list_add_playlist(action)
 	elseif action == 'highlight' then
 		if not list_highlight_cursor or not list_highlight_cursor[1] then return end
 		local file_ignored_total = 0
-		
+
 		for i=1, #list_highlight_cursor do
 			if file_exists(list_highlight_cursor[i][2].found_path) or starts_protocol(protocols, list_highlight_cursor[i][2].found_path) then
 				mp.commandv("loadfile", list_highlight_cursor[i][2].found_path, "append-play")
@@ -1292,7 +1293,7 @@ function delete_log_entry_specific(target_index, target_path, target_time)
 	if not list_contents or not list_contents[1] then return end
 	if target_index == 'last' then target_index = #list_contents end
 	if not target_index then return end
-	
+
 	if target_index and target_path and target_time then
 		if list_contents[target_index].found_path == target_path and tonumber(list_contents[target_index].found_time) == target_time then
 			table.remove(list_contents, target_index)
@@ -1312,7 +1313,7 @@ function delete_log_entry_specific(target_index, target_path, target_time)
 		table.remove(list_contents, target_index)
 		trigger_delete = true
 	end
-	
+
 	if not trigger_delete then return end
 	local f = io.open(log_fullpath, "w+")
 	if list_contents ~= nil and list_contents[1] then
@@ -1329,7 +1330,7 @@ function delete_log_entry(multiple, round, target_path, target_time, entry_limit
 	list_contents = read_log_table()
 	if not list_contents or not list_contents[1] then return end
 	local trigger_delete = false
-	
+
 	if not multiple then
 		for i = #list_contents, 1, -1 do
 			if not round then
@@ -1361,7 +1362,7 @@ function delete_log_entry(multiple, round, target_path, target_time, entry_limit
 			end
 		end
 	end
-	
+
 	if entry_limit and entry_limit > -1 then
 		local entries_found = 0
 		for i = #list_contents, 1, -1 do
@@ -1373,7 +1374,7 @@ function delete_log_entry(multiple, round, target_path, target_time, entry_limit
 			end
 		end
 	end
-	
+
 	if not trigger_delete then return end
 	local f = io.open(log_fullpath, "w+")
 	if list_contents ~= nil and list_contents[1] then
@@ -1388,9 +1389,9 @@ function delete_log_entry_highlighted()
 	if not list_highlight_cursor or not list_highlight_cursor[1] then return end
 	list_contents = read_log_table()
 	if not list_contents or not list_contents[1] then return end
-	
+
 	local list_contents_length = #list_contents
-	
+
 	for i = 1, list_contents_length do
 		for j=1, #list_highlight_cursor do
 			if list_contents[list_contents_length+1-i] then
@@ -1400,11 +1401,11 @@ function delete_log_entry_highlighted()
 			end
 		end
 	end
-	
+
 	msg.info("Deleted "..#list_highlight_cursor.." Item/s")
-	
+
 	list_unhighlight_all()
-	
+
 	local f = io.open(log_fullpath, "w+")
 	if list_contents ~= nil and list_contents[1] then
 		for i = 1, #list_contents do
@@ -1412,7 +1413,7 @@ function delete_log_entry_highlighted()
 		end
 	end
 	f:close()
-	
+
 end
 
 function delete_selected()
@@ -1515,13 +1516,13 @@ function select_filter_sequence(pos)
 	if not list_drawn then return end
 	local curr_pos
 	local target_pos
-	
+
 	for i = 1, #o.filters_and_sequence do
 		if filterName == o.filters_and_sequence[i] then
 			curr_pos = i
 		end
 	end
-	
+
 	if curr_pos and pos > -1 then
 		for i = curr_pos, #o.filters_and_sequence do
 			if o.filters_and_sequence[i + pos] then
@@ -1543,7 +1544,7 @@ function select_filter_sequence(pos)
 			end
 		end
 	end
-	
+
 	if o.loop_through_filters then
 		if not target_pos and pos > -1 or target_pos and target_pos > #o.filters_and_sequence then
 			for i = 1, #o.filters_and_sequence do
@@ -1619,11 +1620,11 @@ function get_list_keybinds()
 			mp.add_forced_key_binding(o.list_highlight_move_keybind[i]..'+'..o.list_page_down_keybind[j], 'highlight-page-down'..j, function()list_page_down('highlight') end, 'repeatable')
 		end
 	end
-	
+
 	if not search_active then
 		bind_keys(o.list_close_keybind, 'list-close', list_close_and_trash_collection)
 	end
-	
+
 	for i = 1, #o.list_filter_jump_keybind do
 		mp.add_forced_key_binding(o.list_filter_jump_keybind[i][1], 'list-filter-jump'..i, function()display_list(o.list_filter_jump_keybind[i][2]) end)
 	end
@@ -1634,8 +1635,8 @@ function get_list_keybinds()
 		else
 			mp.remove_key_binding('open-list'..i)
 		end
-	end	
-	
+	end
+
 	if o.quickselect_0to9_keybind and o.list_show_amount <= 10 then
 		mp.add_forced_key_binding("1", "recent-1", function()load(list_start + 1) end)
 		mp.add_forced_key_binding("2", "recent-2", function()load(list_start + 2) end)
@@ -1669,7 +1670,7 @@ function unbind_list_keys()
 	unbind_keys(o.list_highlight_all_keybind, 'list-highlight-all')
 	unbind_keys(o.list_highlight_all_keybind, 'list-unhighlight-all')
 	unbind_keys(o.list_cycle_sort_keybind, 'list-cycle-sort')
-	
+
 	for i = 1, #o.list_move_up_keybind do
 		mp.remove_key_binding('highlight-move-up'..i)
 	end
@@ -1688,7 +1689,7 @@ function unbind_list_keys()
 	for i = 1, #o.list_page_down_keybind do
 		mp.remove_key_binding('highlight-page-down'..i)
 	end
-	
+
 	for i = 1, #o.list_filter_jump_keybind do
 		mp.remove_key_binding('list-filter-jump'..i)
 	end
@@ -1700,7 +1701,7 @@ function unbind_list_keys()
 			mp.add_forced_key_binding(o.open_list_keybind[i][1], 'open-list'..i, function()display_list(o.open_list_keybind[i][2]) end)
 		end
 	end
-	
+
 	if o.quickselect_0to9_keybind and o.list_show_amount <= 10 then
 		mp.remove_key_binding("recent-1")
 		mp.remove_key_binding("recent-2")
@@ -1748,7 +1749,7 @@ end
 
 function list_search_not_typing_mode(auto_triggered)
 	if auto_triggered then
-		if search_string ~= '' and list_contents[1] then 
+		if search_string ~= '' and list_contents[1] then
 			search_active = 'not_typing'
 		elseif not list_contents[1] then
 			return
@@ -1757,8 +1758,8 @@ function list_search_not_typing_mode(auto_triggered)
 		end
 	else
 		if search_string ~= '' then
-			search_active = 'not_typing' 
-		else 
+			search_active = 'not_typing'
+		else
 			search_active = false
 		end
 	end
@@ -1771,7 +1772,7 @@ function list_search_activate()
 	if not list_drawn then return end
 	if search_active == 'typing' then list_search_exit() return end
 	search_active = 'typing'
-	
+
 	for i = 1, #list_pages do
 		if list_pages[i][1] == filterName then
 			list_pages[i][2] = list_cursor
@@ -1779,7 +1780,7 @@ function list_search_activate()
 			list_pages[i][5] = sortName
 		end
 	end
-	
+
 	update_search_results('','')
 	bind_search_keys()
 end
@@ -1787,16 +1788,16 @@ end
 function update_search_results(character, action)
 	if not character then character = '' end
 	if action == 'string_del' then
-		search_string = search_string:sub(1, -2) 
+		search_string = search_string:sub(1, -2)
 	end
 	search_string = search_string..character
 	local prev_contents_length = #list_contents
 	get_list_contents(filterName)
-	
+
 	if prev_contents_length ~= #list_contents then
 		list_highlight_cursor = {}
 	end
-	
+
 	if character ~= '' and #list_contents > 0 or action ~= nil and #list_contents > 0 then
 		select(1-list_cursor)
 	elseif #list_contents == 0 then
@@ -1946,7 +1947,7 @@ function unbind_search_keys()
 	mp.remove_key_binding('search_string_x')
 	mp.remove_key_binding('search_string_y')
 	mp.remove_key_binding('search_string_z')
-	
+
 	mp.remove_key_binding('search_string_A')
 	mp.remove_key_binding('search_string_B')
 	mp.remove_key_binding('search_string_C')
@@ -1973,7 +1974,7 @@ function unbind_search_keys()
 	mp.remove_key_binding('search_string_X')
 	mp.remove_key_binding('search_string_Y')
 	mp.remove_key_binding('search_string_Z')
-	
+
 	mp.remove_key_binding('search_string_1')
 	mp.remove_key_binding('search_string_2')
 	mp.remove_key_binding('search_string_3')
@@ -1984,7 +1985,7 @@ function unbind_search_keys()
 	mp.remove_key_binding('search_string_8')
 	mp.remove_key_binding('search_string_9')
 	mp.remove_key_binding('search_string_0')
-	
+
 	mp.remove_key_binding('search_string_space')
 	mp.remove_key_binding('search_string_`')
 	mp.remove_key_binding('search_string_~')
@@ -2018,7 +2019,7 @@ function unbind_search_keys()
 	mp.remove_key_binding('search_string_>')
 	mp.remove_key_binding('search_string_,')
 	mp.remove_key_binding('search_string_<')
-	
+
 	mp.remove_key_binding('search_string_del')
 	if not search_active then
 		unbind_keys(o.list_close_keybind, 'search_exit')
@@ -2029,11 +2030,11 @@ end
 
 function mark_chapter()
 	if not o.mark_clipboard_as_chapter then return end
-	
+
 	local all_chapters = mp.get_property_native("chapter-list")
 	local chapter_index = 0
 	local chapters_time = {}
-	
+
 	get_list_contents()
 	if not list_contents or not list_contents[1] then return end
 	for i = 1, #list_contents do
@@ -2042,20 +2043,20 @@ function mark_chapter()
 		end
 	end
 	if not chapters_time[1] then return end
-	
+
 	table.sort(chapters_time, function(a, b) return a < b end)
-	
+
 	for i = 1, #chapters_time do
 		chapter_index = chapter_index + 1
-		
+
 		all_chapters[chapter_index] = {
 			title = 'SmartCopyPaste-II ' .. chapter_index,
 			time = chapters_time[i]
 		}
 	end
-	
+
 	table.sort(all_chapters, function(a, b) return a['time'] < b['time'] end)
-	
+
 	mp.set_property_native("chapter-list", all_chapters)
 end
 
@@ -2067,7 +2068,7 @@ function write_log(target_time, update_seekTime, entry_limit, action)
 		seekTime = target_time
 	end
 	if seekTime < 0 then seekTime = 0 end
-	
+
 	delete_log_entry(false, true, filePath, math.floor(seekTime), entry_limit)
 
 	local f = io.open(log_fullpath, "a+")
@@ -2080,7 +2081,7 @@ function write_log(target_time, update_seekTime, entry_limit, action)
 	else
 		f:write(("[%s] %s | %s | %s"):format(os.date(o.date_format), filePath, log_length_text .. tostring(fileLength), log_time_text .. tostring(seekTime)))
 	end
-	
+
 	if action == 'copy' then
 		f:write(' | ' .. log_clipboard_text .. action)
 	end
@@ -2090,7 +2091,7 @@ function write_log(target_time, update_seekTime, entry_limit, action)
 
 	f:write('\n')
 	f:close()
-	
+
 	if not update_seekTime then
 		seekTime = prev_seekTime
 	end
@@ -2150,7 +2151,7 @@ end
 
 function get_extension(path)
 	if not path then return end
-	
+
     match = string.match(path, '%.([^%.]+)$' )
     if match == nil then
         return 'nomatch'
@@ -2255,7 +2256,7 @@ end
 
 function parse_clipboard(text)
 	if not text then return end
-	
+
 	local clip, clip_file, clip_time, pre_attribute
 	local clip_table = {}
 	clip = text
@@ -2264,7 +2265,7 @@ function parse_clipboard(text)
 	for c in clip:gmatch("[^\n\r]+") do --3.2.1# fix for #80 , accidentally additional "+" was added to the gmatch
 		local c_pre_attribute, c_clip_file, c_clip_time, c_clip_extension
 		c = make_raw(c)
-		
+
 		if starts_protocol(protocols, c) then --3.2# handle protocols to allow for space as a seperator
 			for c_protocols in c:gmatch("[^%s]+") do --3.2# loop iterator using space
 				if starts_protocol(protocols, c_protocols) then --3.2# check if it starts with protocols again after a space
@@ -2276,7 +2277,7 @@ function parse_clipboard(text)
 						c_clip_file = string.match(c, '^\"(.*)\"$')
 					else
 						c_clip_file = c_protocols
-					end			
+					end
 					c_clip_extension = get_extension(c_clip_file)
 					table.insert(clip_table, {c_clip_file, c_clip_time, c_clip_extension})
 				end
@@ -2291,7 +2292,7 @@ function parse_clipboard(text)
 			else
 				c_clip_file = c
 			end
-			
+
 			c_clip_extension = get_extension(c_clip_file)
 			table.insert(clip_table, {c_clip_file, c_clip_time, c_clip_extension})
 		end
@@ -2398,7 +2399,7 @@ end
 
 function trigger_paste_action(action)
 	if not action then return end
-	
+
 	if action == 'load-file' then
 		filePath = clip_file
 		if o.osd_messages == true then
@@ -2410,14 +2411,14 @@ function trigger_paste_action(action)
 		end
 		mp.commandv('loadfile', clip_file)
 		clipboard_pasted = true
-		
+
 		if clip_time ~= nil then
 			msg.info("Pasted the below file into mpv:\n"..clip_file .. format_time(clip_time))
 		else
 			msg.info("Pasted the below file into mpv:\n"..clip_file)
 		end
 	end
-	
+
 	if action == 'load-subtitle' then
 		if o.osd_messages == true then
 			mp.osd_message("Pasted Subtitle:\n"..clip_file)
@@ -2425,47 +2426,47 @@ function trigger_paste_action(action)
 		mp.commandv('sub-add', clip_file, 'select')
 		msg.info("Pasted the below subtitle into mpv:\n"..clip_file)
 	end
-	
+
 	if action == 'file-seek' then
 		local video_duration = mp.get_property_number('duration')
 		seekTime = clip_time + o.resume_offset
-		
-		if seekTime > video_duration then 
+
+		if seekTime > video_duration then
 			if o.osd_messages == true then
 				mp.osd_message('Time Paste Exceeds Video Length' .. o.time_seperator .. format_time(clip_time, o.osd_time_format[3], o.osd_time_format[2], o.osd_time_format[1]))
 			end
 			msg.info("The time pasted exceeds the video length:\n"..format_time(clip_time))
 			return
-		end 
-		
+		end
+
 		if (seekTime < 0) then
 			seekTime = 0
 		end
-	
+
 		if o.osd_messages == true then
 			mp.osd_message('Resumed to Pasted Time' .. o.time_seperator .. format_time(clip_time, o.osd_time_format[3], o.osd_time_format[2], o.osd_time_format[1]))
 		end
 		mp.commandv('seek', seekTime, 'absolute', 'exact')
 		msg.info("Resumed to the pasted time" .. o.time_seperator .. format_time(clip_time))
 	end
-	
+
 	if action == 'add-playlist' then
 		if o.osd_messages == true then
 			mp.osd_message('Pasted Into Playlist:\n'..clip_file)
 		end
 		mp.commandv('loadfile', clip_file, 'append-play')
 		msg.info("Pasted the below into playlist and added it to the log file:\n"..clip_file)
-		
+
 		local temp_filePath = filePath
 		local temp_title_logging = o.file_title_logging
-		
+
 		filePath = clip_file
 		o.file_title_logging = 'none'
 		write_log(0, false, o.same_entry_limit, 'paste')
 		filePath = temp_filePath
 		o.file_title_logging = temp_title_logging
 	end
-	
+
 	if action == 'log-force' then
 		get_list_contents('all', 'added-asc')
 		load(1)
@@ -2481,7 +2482,7 @@ function trigger_paste_action(action)
 			msg.info("Pasted the below from log file into mpv:\n"..list_contents[#list_contents - 1 + 1].found_path)
 		end
 	end
-	
+
 	if action == 'log-force-noresume' then
 		get_list_contents('all', 'added-asc')
 		if not list_contents or not list_contents[1] then return end
@@ -2491,7 +2492,7 @@ function trigger_paste_action(action)
 		end
 		msg.info("Pasted the below from log file into mpv:\n"..list_contents[#list_contents - 1 + 1].found_path)
 	end
-	
+
 	if action == 'log-playlist' then
 		get_list_contents('all', 'added-asc')
 		if not list_contents or not list_contents[1] then return end
@@ -2501,7 +2502,7 @@ function trigger_paste_action(action)
 		end
 		msg.info("Pasted the below from log file into mpv playlist:\n"..list_contents[#list_contents - 1 + 1].found_path)
 	end
-	
+
 	if action == 'log-timestamp' then
 		get_list_contents('all', 'added-asc')
 		if not list_contents or not list_contents[1] then return end
@@ -2522,7 +2523,7 @@ function trigger_paste_action(action)
 			list_contents = nil
 		end
 	end
-	
+
 	if action == 'log-timestamp>playlist' then
 		get_list_contents('all', 'added-asc')
 		if not list_contents or not list_contents[1] then return end
@@ -2545,7 +2546,7 @@ function trigger_paste_action(action)
 			msg.info("Pasted the below from log file into mpv playlist:\n"..list_contents[#list_contents - 1 + 1].found_path)
 		end
 	end
-	
+
 	if action == 'log-timestamp>force' then
 		get_list_contents('all', 'added-asc')
 		if not list_contents or not list_contents[1] then return end
@@ -2577,28 +2578,28 @@ function trigger_paste_action(action)
 			end
 		end
 	end
-	
+
 	if action == 'error-subtitle' then
 		if o.osd_messages == true then
 			mp.osd_message('Subtitle Paste Requires Running Video:\n'..clip_file)
 		end
 		msg.info('Subtitles can only be pasted if a video is running:\n'..clip_file)
 	end
-	
+
 	if action == 'error-unsupported' then
 		if o.osd_messages == true then
 			mp.osd_message('Paste of this item is unsupported possibly due to configuration:\n'..clip)
 		end
 		msg.info('Failed to paste into mpv, pasted item shown below is unsupported possibly due to configuration:\n'..clip)
 	end
-	
+
 	if action == 'error-missing' then
 		if o.osd_messages == true then
 			mp.osd_message('File Doesn\'t Exist:\n' .. clip_file)
 		end
 		msg.info('The file below doesn\'t seem to exist:\n' .. clip_file)
 	end
-	
+
 	if action == 'error-time' then
 		if o.osd_messages == true then
 			if clip_time ~= nil then
@@ -2607,28 +2608,28 @@ function trigger_paste_action(action)
 				mp.osd_message('Time Paste Requires Running Video')
 			end
 		end
-		
+
 		if clip_time ~= nil then
 			msg.info('Time can only be pasted if a video is running:\n'.. format_time(clip_time))
 		else
 			msg.info('Time can only be pasted if a video is running')
 		end
 	end
-	
+
 	if action == 'error-missingtime' then
 		if o.osd_messages == true then
 			mp.osd_message('Clipboard does not contain time for seeking:\n'..clip)
 		end
 		msg.info("Clipboard does not contain the time attribute and time for seeking:\n"..clip)
 	end
-	
+
 	if action == 'error-samefile' then
 		if o.osd_messages == true then
 			mp.osd_message('Pasted file is already running:\n'..clip)
 		end
 		msg.info("Pasted file shown below is already running:\n"..clip)
 	end
-	
+
 	if action == 'error-unknown' then
 		if o.osd_messages == true then
 			mp.osd_message('Paste was ignored due to an error:\n'..clip)
@@ -2646,7 +2647,7 @@ function multipaste()
 
 	if filePath == nil then
 		for i=1, #clip_table do
-			if file_exists(clip_table[i][1]) and has_value(o.paste_extensions, clip_table[i][3]) 
+			if file_exists(clip_table[i][1]) and has_value(o.paste_extensions, clip_table[i][3])
 			or starts_protocol(o.paste_protocols, clip_table[i][1]) then
 				filePath = clip_table[i][1]
 				mp.commandv('loadfile', clip_table[i][1])
@@ -2657,14 +2658,14 @@ function multipaste()
 			end
 		end
 	end
-	
+
 	if filePath ~= nil then
 		for i=1, #clip_table do
 			if file_exists(clip_table[i][1]) and has_value(o.paste_extensions, clip_table[i][3])
 			or starts_protocol(o.paste_protocols, clip_table[i][1]) then
 				mp.commandv('loadfile', clip_table[i][1], 'append-play')
 				triggered_multipaste[2] = true
-				
+
 				local temp_filePath = filePath
 				local temp_title_logging = o.file_title_logging
 				filePath = clip_table[i][1]
@@ -2687,7 +2688,7 @@ function multipaste()
 			end
 		end
 	end
-	
+
 	local osd_msg = ''
 	if triggered_multipaste[1] == true then
 		if osd_msg ~= '' then osd_msg = osd_msg..'\n' end
@@ -2700,16 +2701,16 @@ function multipaste()
 	if triggered_multipaste[2] == true then
 		if osd_msg ~= '' then osd_msg = osd_msg..'\n' end
 		osd_msg = osd_msg..'Added Into Playlist '..#clip_table - file_ignored_total - file_subtitle_total..' item/s'
-	end	
+	end
 	if file_ignored_total > 0 then
 		if osd_msg ~= '' then osd_msg = osd_msg..'\n' end
 		osd_msg = osd_msg..'Ignored '..file_ignored_total.. ' Item/s'
 	end
-	
+
 	if osd_msg == '' then
 		osd_msg = 'Pasted Items Ignored or Unable To Append Into Video:\n'..clip
 	end
-	
+
 	if o.osd_messages == true then
 		mp.osd_message(osd_msg)
 	end
@@ -2725,13 +2726,13 @@ function paste()
 	clip = get_clipboard(clip)
 	if not clip then msg.error('Error: clip is null' .. clip) return end
 	clip, clip_file, clip_time, clip_table = parse_clipboard(clip)
-	
+
 	if #clip_table > 1 then
 		multipaste()
 	else
 		local currentVideoExtension = string.lower(get_extension(clip_file))
 		if filePath == nil then
-			if file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension) 
+			if file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension)
 			or starts_protocol(o.paste_protocols, clip_file) then
 				trigger_paste_action('load-file')
 			elseif file_exists(clip_file) and has_value(o.paste_subtitles, currentVideoExtension) then
@@ -2782,7 +2783,7 @@ function paste()
 			elseif o.running_paste_behavior == 'timestamp' then
 				if clip_time ~= nil then
 					trigger_paste_action('file-seek')
-				elseif file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension) 
+				elseif file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension)
 				or starts_protocol(o.paste_protocols, clip_file) then
 					trigger_paste_action('add-playlist')
 				elseif not has_value(o.paste_extensions, currentVideoExtension) then
@@ -2802,12 +2803,12 @@ function paste()
 					end
 				end
 			elseif o.running_paste_behavior == 'force' then
-				if filePath ~= clip_file and file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension) 
+				if filePath ~= clip_file and file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension)
 				or filePath ~= clip_file and starts_protocol(o.paste_protocols, clip_file) then
 					trigger_paste_action('load-file')
 				elseif clip_time ~= nil then
 					trigger_paste_action('file-seek')
-				elseif file_exists(clip_file) and filePath == clip_file 
+				elseif file_exists(clip_file) and filePath == clip_file
 				or filePath == clip_file and starts_protocol(o.paste_protocols, clip_file) then
 					trigger_paste_action('add-playlist')
 				elseif not has_value(o.paste_extensions, currentVideoExtension) then
@@ -2828,22 +2829,22 @@ function paste()
 				end
 			end
 		end
-	end	
+	end
 end
 
 
 function paste_specific(action)
 	if not action then return end
-	
+
 	if o.osd_messages == true then
 		mp.osd_message("Pasting...")
 	end
 	msg.info("Pasting...")
-	
+
 	clip = get_clipboard(clip)
 	if not clip then msg.error('Error: clip is null' .. clip) return end
 	clip, clip_file, clip_time, clip_table = parse_clipboard(clip)
-	
+
 	if #clip_table > 1 then
 		multipaste()
 	else
@@ -2860,7 +2861,7 @@ function paste_specific(action)
 				trigger_paste_action('error-unknown')
 			end
 		end
-		
+
 		if action == 'timestamp' then
 			if filePath == nil then
 				trigger_paste_action('error-time')
@@ -2876,12 +2877,12 @@ function paste_specific(action)
 				trigger_paste_action('error-unknown')
 			end
 		end
-		
+
 		if action == 'force' then
-			if filePath ~= clip_file and file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension) 
+			if filePath ~= clip_file and file_exists(clip_file) and has_value(o.paste_extensions, currentVideoExtension)
 			or filePath ~= clip_file and starts_protocol(o.paste_protocols, clip_file) then
 				trigger_paste_action('load-file')
-			elseif file_exists(clip_file) and filePath == clip_file 
+			elseif file_exists(clip_file) and filePath == clip_file
 			or filePath == clip_file and starts_protocol(o.paste_protocols, clip_file) then
 				trigger_paste_action('error-samefile')
 			elseif not has_value(o.paste_extensions, currentVideoExtension) and not has_value(o.paste_subtitles, currentVideoExtension) then
@@ -2902,10 +2903,10 @@ mp.register_event('file-loaded', function()
 		clip = get_clipboard(clip)
 		if not clip then msg.error('Error: clip is null' .. clip) return end
 		clip, clip_file, clip_time, clip_table = parse_clipboard(clip)
-		
+
 		if #clip_table > 1 then
 			for i=1, #clip_table do
-				if file_exists(clip_table[i][1]) and has_value(o.paste_extensions, clip_table[i][3]) 
+				if file_exists(clip_table[i][1]) and has_value(o.paste_extensions, clip_table[i][3])
 				or starts_protocol(o.paste_protocols, clip_table[i][1]) then
 					clip_file = clip_table[i][1]
 					clip_time = clip_table[i][2]
@@ -2913,7 +2914,7 @@ mp.register_event('file-loaded', function()
 				end
 			end
 		end
-		
+
 		local video_duration = mp.get_property_number('duration')
 		if not clip_time or clip_time > video_duration or clip_time <= 0 then
 			write_log(0, false, o.same_entry_limit, 'paste')
@@ -2922,8 +2923,8 @@ mp.register_event('file-loaded', function()
 		end
 		if filePath == clip_file and clip_time ~= nil then
 			seekTime = clip_time + o.resume_offset
-			
-			if seekTime > video_duration then 
+
+			if seekTime > video_duration then
 				if o.osd_messages == true then
 					mp.osd_message('Time Paste Exceeds Video Length' .. o.time_seperator .. format_time(clip_time, o.osd_time_format[3], o.osd_time_format[2], o.osd_time_format[1]))
 				end
@@ -2934,12 +2935,12 @@ mp.register_event('file-loaded', function()
 			if seekTime < 0 then
 				seekTime = 0
 			end
-		
+
 			mp.commandv('seek', seekTime, 'absolute', 'exact')
 			clipboard_pasted = false
 		end
 	end
-	
+
 	if resume_selected == true and seekTime ~= nil then
 		mp.commandv('seek', seekTime, 'absolute', 'exact')
 		resume_selected = false

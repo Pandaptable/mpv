@@ -146,5 +146,5 @@ local function on_file_end()
 end
 
 
-mp.register_event("start-file", guess_media_title)
+mp.register_event("file-loaded", guess_media_title)
 mp.register_event("end-file", on_file_end)

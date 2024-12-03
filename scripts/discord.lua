@@ -1,6 +1,7 @@
+local mp = require "mp"
 local utils = require 'mp.utils'
-local msg = require("mp.msg")
-local opts = require("mp.options")
+local msg = require "mp.msg"
+local opts = require "mp.options"
 
 -- Function to get the temporary path directory
 local function get_temp_path()

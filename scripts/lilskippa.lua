@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- This script defines the following keybinds:
 --
 -- % skip2scene
@@ -8,18 +9,18 @@
 -- skip2black fast forwards to the next black video segment
 -- skip2silence fast forwards to the next silent audio segment
 --
--- skip2scene is useful but not always reliable. It won't budge on high-motion 
--- scenes and, although the default threshold is low, it might still miss some 
+-- skip2scene is useful but not always reliable. It won't budge on high-motion
+-- scenes and, although the default threshold is low, it might still miss some
 -- cuts.
 --
 -- skip2silence doesn't appear to work with hwdec.
 --
--- Any of these skips can be reverted with revert-seek (bound to Shift+BS by 
+-- Any of these skips can be reverted with revert-seek (bound to Shift+BS by
 -- default), useful for when it hurtles past the desired point.
 --
--- This script will apply a "fastforward" profile while fast forwarding and 
--- restore it after the fast forward completes. This way the user can define a 
--- fastforward profile in their mpv.conf where they can, for example, tweak 
+-- This script will apply a "fastforward" profile while fast forwarding and
+-- restore it after the fast forward completes. This way the user can define a
+-- fastforward profile in their mpv.conf where they can, for example, tweak
 -- mpv's options for performance. An example:
 --
 -- [fastforward]
@@ -36,12 +37,14 @@
 -- blackdetect_args: arguments for the blackdetect filter, defaults to "0.1"
 -- silencedetect_args: arguments for the silencedetect filter, defaults to "d=0.5"
 --
--- This script reimplements some of the functionality of the two scripts below. 
+-- This script reimplements some of the functionality of the two scripts below.
 -- Thank you to their authors for creating them and making them open source:
 --
 -- https://gist.github.com/bossen/3cfe86a6cdd61452dbb96865128fb327
 -- https://github.com/detuur/mpv-scripts/blob/master/skiptosilence.lua
 --
+
+local mp = require 'mp'
 
 local options = require 'mp.options'
 local o = {

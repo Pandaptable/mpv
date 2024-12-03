@@ -1,3 +1,4 @@
+---@diagnostic disable: cast-local-type, lowercase-global
 local utils = require 'mp.utils'
 local options = require 'mp.options'
 

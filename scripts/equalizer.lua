@@ -1,12 +1,12 @@
+---@diagnostic disable: lowercase-global
 local opts = {
     bars = 'brightness,contrast,gamma,saturation,hue',
     draw_icons = true,
 }
-
+local mp = require 'mp'
 local msg = require 'mp.msg'
 local assdraw = require 'mp.assdraw'
 local options = require 'mp.options'
-local utils = require 'mp.utils'
 
 options.read_options(opts, nil, function(c)
 end)

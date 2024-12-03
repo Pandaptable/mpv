@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- mpvSockets, one socket per instance, removes socket on exit
 
 local utils = require 'mp.utils'

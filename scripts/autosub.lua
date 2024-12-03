@@ -1,9 +1,10 @@
+---@diagnostic disable: lowercase-global
 --=============================================================================
 -->>    SUBLIMINAL PATH:
 --=============================================================================
 --          This script uses Subliminal to download subtitles,
 --          so make sure to specify your system's Subliminal location below:
-local subliminal = 'C:\\Users\\Nemmy\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\subliminal.exe'
+local subliminal = 'subliminal.exe'
 --=============================================================================
 -->>    SUBTITLE LANGUAGE:
 --=============================================================================
@@ -62,6 +63,7 @@ local includes = {
     'Media Library',
 }
 --=============================================================================
+local mp = require 'mp'
 local utils = require 'mp.utils'
 
 
@@ -166,8 +168,8 @@ end
 
 -- Check if subtitles should be auto-downloaded:
 function autosub_allowed()
-    local duration = tonumber(mp.get_property('duration'))
-    local active_format = mp.get_property('file-format')
+    local duration = tonumber(mp.get_property_native('duration'))
+    local active_format = mp.get_property_native('file-format')
 
     if not bools.auto then
         mp.msg.warn('Automatic downloading disabled!')

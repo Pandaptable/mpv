@@ -1,3 +1,4 @@
+---@diagnostic disable: duplicate-set-field
 local function print(s)
 	mp.msg.info(s)
 	mp.osd_message(s)

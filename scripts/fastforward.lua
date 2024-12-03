@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil
 --[[ fastforward.lua
 
 # Examples
@@ -19,7 +20,7 @@ speed_decrease=/1.1
 ```
 
 ]]
-
+local mp = require 'mp'
 local options = require 'mp.options'
 
 --[[

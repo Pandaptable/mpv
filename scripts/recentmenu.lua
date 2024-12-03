@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 local utils = require("mp.utils")
 local options = require("mp.options")
 local input_available, input = pcall(require, "mp.input")

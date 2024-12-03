@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 local opts = {
     enabled = true,
     center = "92,92",
@@ -11,6 +12,7 @@ local opts = {
     hide_when_full_image_in_view = true,
 }
 
+local mp = require 'mp'
 local msg = require 'mp.msg'
 local assdraw = require 'mp.assdraw'
 local options = require 'mp.options'

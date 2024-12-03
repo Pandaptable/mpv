@@ -5,13 +5,14 @@
 -- Also disables the save-position-on-quit for this file, if it qualifies for looping.
 
 
-require 'mp.options'
+local mp = require 'mp'
+local options = require 'mp.options'
 
-function getOption()
+local function getOption()
     -- Use recommended way to get options
-    local options = {autoloop_duration = 5}
-    read_options(options)
-    autoloop_duration = options.autoloop_duration
+    local opt = {autoloop_duration = 5}
+    options.read_options(opt)
+    autoloop_duration = opt.autoloop_duration
 
 
     -- Keep old way just for compatibility (remove lines 15-27 soon)
@@ -29,11 +30,11 @@ function getOption()
     -- Remove lines 15-27 soon
 end
 
-function set_loop()
+local function set_loop()
     local duration = mp.get_property_native("duration")
 
     -- Checks whether the loop status was changed for the last file
-    was_loop = mp.get_property_native("loop-file")
+    local was_loop = mp.get_property_native("loop-file")
 
     -- Cancel operation if there is no file duration
     if not duration then

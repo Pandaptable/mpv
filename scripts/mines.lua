@@ -1,3 +1,6 @@
+---@diagnostic disable: need-check-nil, lowercase-global
+
+local mp = require 'mp'
 local assdraw = require 'mp.assdraw'
 
 local W = 0

@@ -1,3 +1,4 @@
+---@diagnostic disable: duplicate-set-field, lowercase-global
 
 -- https://github.com/stax76/mpv-scripts
 
@@ -19,7 +20,7 @@ local o = {
     stream_quality_options = "2160,1440,1080,720,480",
     aspect_ratios = "4:3,16:9,2.35:1,1.36,1.82,0,-1",
 }
-
+local mp = require "mp"
 local opt = require "mp.options"
 opt.read_options(o)
 

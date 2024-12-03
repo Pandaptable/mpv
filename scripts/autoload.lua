@@ -1,3 +1,4 @@
+---@diagnostic disable: param-type-mismatch, lowercase-global
 -- This script automatically loads playlist entries before and after the
 -- the currently played file. It does so by scanning the directory a file is
 -- located in when starting playback. It sorts the directory entries
@@ -35,6 +36,7 @@ ignore_patterns=^~,^bak-,%.bak$
 MAXENTRIES = 5000
 MAXDIRSTACK = 20
 
+local mp = require 'mp'
 local msg = require 'mp.msg'
 local options = require 'mp.options'
 local utils = require 'mp.utils'

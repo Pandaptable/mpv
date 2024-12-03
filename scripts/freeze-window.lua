@@ -1,5 +1,7 @@
 -- credit to TheAMM
 
+local mp = require 'mp'
+
 local size_changed = false
 
 mp.register_idle(function()

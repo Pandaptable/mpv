@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 -- Copyright (c) 2021, Eisa AlAwadhi
 -- License: BSD 2-Clause License
 
@@ -32,14 +33,14 @@ local function prepareUndoRedo()
 	else
 		seconds = seconds - 0.5
 	end
-		seekTable[currentIndex] = seekTable[currentIndex] + seconds 	
-		seconds = 0	
+		seekTable[currentIndex] = seekTable[currentIndex] + seconds
+		seconds = 0
 end
 
 local function getUndoRedo()
 	if (seeking == 0) then
 			prepareUndoRedo()
-			
+
 			seekNumber = currentIndex + 1
 			currentIndex = seekNumber
 			seekTime = math.floor(mp.get_property_number('time-pos'))
@@ -54,7 +55,7 @@ end
 
 mp.register_event('file-loaded', function()
 	filePath = mp.get_property('path')
-	
+
 	timer = mp.add_periodic_timer(0.1, function()
 		seconds = seconds + 0.1
 	end)
@@ -67,7 +68,7 @@ mp.register_event('file-loaded', function()
 
 	timer2 = mp.add_periodic_timer(0.1, function()
 		countTimer = countTimer + 0.1
-		
+
 		if (countTimer == 0.6) then
 			timer:resume()
 			getUndoRedo()
@@ -181,7 +182,7 @@ local function redo()
 		mp.commandv('seek', seekTable[currentIndex], 'absolute', 'exact')
 
 		undoRedo = 0
-		
+
 		if (osd_messages == true) then
 			mp.osd_message('Redo')
 		end

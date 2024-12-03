@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, lowercase-global
 -- groupwatch_sync.lua
 --
 -- Because I want to pause and take beautiful screenshots.
@@ -45,6 +46,7 @@ local sync_timer = nil
 local last_schedule = ""
 local evafast_available = false
 
+local mp = require "mp"
 mp.options = require "mp.options"
 mp.assdraw = require "mp.assdraw"
 mp.options.read_options(options, "groupwatch_sync")
@@ -246,10 +248,10 @@ end
 
 local function clamp_time_with_range(edit_time, min, max)
     if user_time[edit_time] > max then
-         user_time[edit_time] = min 
+         user_time[edit_time] = min
         return 1
     elseif user_time[edit_time] < min then
-         user_time[edit_time] = max 
+         user_time[edit_time] = max
         return -1
     end
     return 0

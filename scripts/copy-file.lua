@@ -1,4 +1,5 @@
 --TODO: make platform-independent (windows only atm (i think))
+local mp = require 'mp'
 
 local function copy_to_clipboard(key, message)
     local file_path = mp.get_property(key)

@@ -1,3 +1,4 @@
+---@diagnostic disable: lowercase-global
 local opts = {
     show_distance = true,
     show_coordinates = true,

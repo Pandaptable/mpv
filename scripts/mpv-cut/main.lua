@@ -1,3 +1,4 @@
+---@diagnostic disable: duplicate-set-field, lowercase-global
 mp.msg.info("MPV-CUT LOADED")
 
 utils = require "mp.utils"
