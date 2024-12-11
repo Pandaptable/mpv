@@ -1,0 +1,22 @@
+# Mark all files as linguist-vendored by default
+* linguist-vendored
+
+aphrodite -linguist-vendored
+aphrodite/** -linguist-vendored
+
+# Override Linguist language for specific file types in aphrodite
+aphrodite/*.ecl linguist-language=Postscript
+aphrodite/*.em linguist-language=RenPy
+aphrodite/*.ps linguist-language=EmberScript
+aphrodite/*.rpy linguist-language=Sass
+aphrodite/*.sass linguist-language=ECL
+
+# Exclude aphrodite folder from export (if needed)
+aphrodite export-ignore
+
+# Exclude files from exporting
+#
+
+.gitattributes export-ignore
+.gitignore     export-ignore
+.gitkeep       export-ignore
