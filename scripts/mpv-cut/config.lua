@@ -1,4 +1,5 @@
 ---@diagnostic disable: duplicate-set-field
+
 local function print(s)
 	mp.msg.info(s)
 	mp.osd_message(s)
@@ -11,102 +12,201 @@ KEY_CYCLE_ACTION = "a"
 KEY_BOOKMARK_ADD = "i"
 
 -- The default action
-ACTION = "ENCODE"
+ACTION = "ENCODE_h264"
 
 -- Delete a default action
 ACTIONS.LIST = nil
+ACTIONS.ENCODE = nil
 
 ACTIONS.COPY = function(d)
 	local args = {
 		"ffmpeg",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", d.inpath,
-		"-c", "copy",
-		"-map", "0",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
+		"-c",
+		"copy",
+		"-map",
+		"0",
 		"-dn",
-		"-avoid_negative_ts", "make_zero",
-		utils.join_path(d.indir, "COPY_" .. d.infile_noext .. d.ext)
+		"-avoid_negative_ts",
+		"make_zero",
+		utils.join_path(d.indir, "COPY_" .. d.infile_noext .. d.ext),
 	}
 	mp.command_native_async({
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function() print("Done") end)
+	}, function()
+		print("Done")
+	end)
 end
 
--- ACTIONS.ENCODE = function(d)
--- 	local args = {
--- 		"ffmpeg",
--- 		"-hwaccel", "cuda",
--- 		"-nostdin", "-y",
--- 		"-loglevel", "error",
--- 		"-ss", d.start_time,
--- 		"-t", d.duration,
--- 		"-i", d.inpath,
--- 		"-c:v", "h264_nvenc",
--- 		"-pix_fmt", "yuv420p",
--- 		"-preset", "p7",
--- 		"-b:v", "15000K",
--- 		"-maxrate","15000K",
--- 		"-minrate", "15000K",
--- 		"-bufsize", "15000K",
--- 		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. d.ext)
--- 	}
--- 	mp.command_native_async({
--- 		name = "subprocess",
--- 		args = args,
--- 		playback_only = false,
--- 	}, function() print("Done") end)
--- end
-
-ACTIONS.ENCODE = function(d)
+ACTIONS.ENCODE_h265 = function(d)
 	local args = {
 		"ffmpeg",
-		"-hwaccel", "cuda",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", d.inpath,
-		"-c:v", "h264_nvenc",
-		"-pix_fmt", "yuv420p",
-		"-preset", "p7",
-		"-rc", "vbr_hq",
-		"-qmin", "0",
-		"-cq", "25",
-		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4")
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
+		"-c:v",
+		"hevc_nvenc",
+		"-profile:v",
+		"main",
+		"-pix_fmt",
+		"yuv420p",
+		"-color_range",
+		"2",
+		"-preset",
+		"p7",
+		"-rc",
+		"vbr_hq",
+		"-cq",
+		"25",
+		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"),
 	}
 	mp.command_native_async({
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function() print("Done") end)
+	}, function()
+		print("Done")
+	end)
 end
 
-ACTIONS.COPY_ENCODE = function(d)
+ACTIONS.ENCODE_h264 = function(d)
 	local args = {
 		"ffmpeg",
-		"-hwaccel", "cuda",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", '"' .. d.inpath .. '"',
-		"-c:v", "h264_nvenc",
-		"-pix_fmt", "yuv420p",
-		"-preset", "p7",
-		"-rc", "vbr_hq",
-		"-qmin", "0",
-		"-cq", "25",
-		'"' .. utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4") .. '"'
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
+		"-c:v",
+		"h264_nvenc",
+		"-profile:v",
+		"high",
+		"-pix_fmt",
+		"yuv420p",
+		"-color_range",
+		"2",
+		"-preset",
+		"p7",
+		"-rc",
+		"vbr_hq",
+		"-cq",
+		"25",
+		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"),
+	}
+	mp.command_native_async({
+		name = "subprocess",
+		args = args,
+		playback_only = false,
+	}, function()
+		print("Done")
+	end)
+end
+
+ACTIONS.COPY_ENCODE_h264 = function(d)
+	local args = {
+		"ffmpeg",
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		'"' .. d.inpath .. '"',
+		"-c:v",
+		"h264_nvenc",
+		"-profile:v",
+		"high",
+		"-pix_fmt",
+		"yuv420p",
+		"-color_range",
+		"2",
+		"-preset",
+		"p7",
+		"-rc",
+		"vbr_hq",
+		"-cq",
+		"25",
+		'"' .. utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4") .. '"',
 	}
 	local command = table.concat(args, " ")
-	if package.config:sub(1,1) == "\\" then
+	if package.config:sub(1, 1) == "\\" then
 		-- Windows
-		os.execute('echo ' .. command .. ' | clip')
+		os.execute("echo " .. command .. " | clip")
+	else
+		-- Linux/macOS
+		os.execute('echo "' .. command .. '" | pbcopy || xclip -selection clipboard')
+	end
+
+	print("Command copied:" .. command)
+end
+
+ACTIONS.COPY_ENCODE_h265 = function(d)
+	local args = {
+		"ffmpeg",
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		'"' .. d.inpath .. '"',
+		"-c:v",
+		"hevc_nvenc",
+		"-profile:v",
+		"main",
+		"-pix_fmt",
+		"yuv420p",
+		"-color_range",
+		"2",
+		"-preset",
+		"p7",
+		"-rc",
+		"vbr_hq",
+		"-cq",
+		"25",
+		'"' .. utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4") .. '"',
+	}
+	local command = table.concat(args, " ")
+	if package.config:sub(1, 1) == "\\" then
+		-- Windows
+		os.execute("echo " .. command .. " | clip")
 	else
 		-- Linux/macOS
 		os.execute('echo "' .. command .. '" | pbcopy || xclip -selection clipboard')
@@ -118,40 +218,56 @@ end
 ACTIONS.ENCODE_AUDIO = function(d)
 	local args = {
 		"ffmpeg",
-		"-hwaccel", "cuda",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", d.inpath,
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
 		"-vn",
-		"-c:a", "libvorbis",
-		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".ogg")
+		"-c:a",
+		"libvorbis",
+		utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".ogg"),
 	}
 	mp.command_native_async({
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function() print("Done") end)
+	}, function()
+		print("Done")
+	end)
 end
 
 ACTIONS.COPY_AUDIO = function(d)
 	local args = {
 		"ffmpeg",
-		"-hwaccel", "cuda",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", '"' .. d.inpath .. '"',
+		"-hwaccel",
+		"cuda",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		'"' .. d.inpath .. '"',
 		"-vn",
-		"-c:a", "libvorbis",
-		'"' .. utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".ogg") .. '"'
+		"-c:a",
+		"libvorbis",
+		'"' .. utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".ogg") .. '"',
 	}
 	local command = table.concat(args, " ")
-	if package.config:sub(1,1) == "\\" then
+	if package.config:sub(1, 1) == "\\" then
 		-- Windows
-		os.execute('echo ' .. command .. ' | clip')
+		os.execute("echo " .. command .. " | clip")
 	else
 		-- Linux/macOS
 		os.execute('echo "' .. command .. '" | pbcopy || xclip -selection clipboard')
