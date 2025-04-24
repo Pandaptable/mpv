@@ -54,10 +54,10 @@ end)
 
 local allowed_devices = {
 	"auto",
-	"wasapi/{00d938c6-46d9-4140-83aa-b4f97847de55}", -- CABLE-A
-	"wasapi/{d7d2d23c-83c5-4d40-a743-6e33d5be7cc4}", -- Voicemeeter Input
 	"wasapi/{f5594dc2-d225-4c4c-9873-a530eec2c5a0}", -- Voicemeeter VAIO3 Input
 	"wasapi/{f617877f-0da2-424d-a07d-788945f1d210}", -- Monitor
+	"wasapi/{d7d2d23c-83c5-4d40-a743-6e33d5be7cc4}", -- Voicemeeter Input
+	"wasapi/{00d938c6-46d9-4140-83aa-b4f97847de55}", -- CABLE-A
 }
 
 local device_index = 1
@@ -89,8 +89,17 @@ local function set_device(index)
 		return
 	end
 
-	device_index = ((index - 1) % #filtered) + 1
-	local selected = filtered[device_index]
+	local ordered_devices = {}
+	for _, allowed_device in ipairs(allowed_devices) do
+		for _, dev in ipairs(filtered) do
+			if dev.name == allowed_device then
+				table.insert(ordered_devices, dev)
+			end
+		end
+	end
+
+	device_index = ((index - 1) % #ordered_devices) + 1
+	local selected = ordered_devices[device_index]
 	mp.set_property("audio-device", selected.name)
 	mp.osd_message("Device: " .. selected.description, 1)
 end
@@ -111,7 +120,6 @@ mp.add_key_binding("Ctrl+Shift+d", "copy_audio_devices", function()
 		text = text .. string.format("[%d] name: %s | desc: %s\n", i, dev.name, dev.description)
 	end
 
-	-- Write to a temp file and pipe to clip
 	local tmpfile = os.getenv("TEMP") .. "\\mpv_audio_devices.txt"
 	local file = io.open(tmpfile, "w")
 	file:write(text)
