@@ -16,29 +16,31 @@
 -- GitHub: https://github.com/blue-sky-r/mpv/tree/master/scripts
 
 local options = require("mp.options")
-local utils   = require("mp.utils")
+local utils = require("mp.utils")
 
 -- defaults
 local cfg = {
-	interval = '15m',
-	format   = "%H:%M",
+	interval = "15m",
+	format = "%H:%M",
 	duration = 2.5,
-	key      = 'h',
-	name     = 'show-clock'
+	key = "h",
+	name = "show-clock",
 }
 
 -- human readable time format to seconds: 15m 3s -> 903
 local function htime2sec(hstr)
 	local s = tonumber(hstr)
 	-- only number withoout units
-	if s then return s end
+	if s then
+		return s
+	end
 	-- human units h,m,s to seconds
-	local hu = {h=60*60, m=60, s=1}
+	local hu = { h = 60 * 60, m = 60, s = 1 }
 	s = 0
-	for unit,mult in pairs(hu) do
-		local _,_,num = string.find(hstr, "(%d+)"..unit)
-		if num then 
-			s = s + tonumber(num)*mult
+	for unit, mult in pairs(hu) do
+		local _, _, num = string.find(hstr, "(%d+)" .. unit)
+		if num then
+			s = s + tonumber(num) * mult
 		end
 	end
 	return s
@@ -52,10 +54,10 @@ local function aligned_timeout(align)
 end
 
 -- read lua-settings/osd-clock.conf
-options.read_options(cfg, 'osd-clock')
+options.read_options(cfg, "osd-clock")
 
 -- log active config
-mp.msg.verbose('cfg = '..utils.to_string(cfg))
+mp.msg.verbose("cfg = " .. utils.to_string(cfg))
 
 -- OSD show clock
 local function osd_clock()
@@ -66,31 +68,28 @@ end
 -- non empty interval enables osd clock
 if cfg.interval then
 	-- log
-	mp.msg.info('interval:'..cfg.interval..', format:'..cfg.format)
+	mp.msg.info("interval:" .. cfg.interval .. ", format:" .. cfg.format)
 
 	-- osd timer
-	local osd_timer = mp.add_periodic_timer( htime2sec(cfg.interval), osd_clock)
+	local osd_timer = mp.add_periodic_timer(htime2sec(cfg.interval), osd_clock)
 	osd_timer:stop()
 
 	-- start osd timer exactly at interval boundary
-	local delay = aligned_timeout( htime2sec( cfg.interval))
+	local delay = aligned_timeout(htime2sec(cfg.interval))
 
 	-- delayed start
-	mp.add_timeout(delay, 
-		function() 
-			osd_timer:resume()
-			osd_clock()
-		end
-	)
+	mp.add_timeout(delay, function()
+		osd_timer:resume()
+		osd_clock()
+	end)
 
 	-- log startup delay for osd timer
-	mp.msg.verbose('for osd_interval:'..cfg.interval..' calculated startup delay:'..delay)
+	mp.msg.verbose("for osd_interval:" .. cfg.interval .. " calculated startup delay:" .. delay)
 
 	-- optional bind to the key
 	if cfg.key then
 		mp.add_key_binding(cfg.key, cfg.name, osd_clock)
 		-- log binding
-		mp.msg.verbose("key:'"..cfg.key.."' bound to '"..cfg.name.."'")
+		mp.msg.verbose("key:'" .. cfg.key .. "' bound to '" .. cfg.name .. "'")
 	end
 end
-

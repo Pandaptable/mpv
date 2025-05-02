@@ -4,8 +4,8 @@
 -- This script skips sponsored segments of YouTube videos
 -- using data from https://github.com/ajayyy/SponsorBlock
 
-local opt = require 'mp.options'
-local utils = require 'mp.utils'
+local opt = require("mp.options")
+local utils = require("mp.utils")
 
 local ON = false
 local ranges = nil
@@ -17,22 +17,24 @@ local options = {
 	categories = '"sponsor,intro,outro,music_offtopic"',
 
 	-- Set this to "true" to use sha256HashPrefix instead of videoID
-	hash = ""
+	hash = "",
 }
 
 opt.read_options(options)
 
-function skip_ads(name,pos)
+function skip_ads(name, pos)
 	if pos then
 		for _, i in pairs(ranges) do
 			v = i.segment[2]
 			if i.segment[1] <= pos and v > pos then
 				--this message may sometimes be wrong
 				--it only seems to be a visual thing though
-				mp.osd_message(("[sponsorblock] skipping forward %ds"):format(math.floor(v-mp.get_property("time-pos"))))
+				mp.osd_message(
+					("[sponsorblock] skipping forward %ds"):format(math.floor(v - mp.get_property("time-pos")))
+				)
 				--need to do the +0.01 otherwise mpv will start spamming skip sometimes
 				--example: https://www.youtube.com/watch?v=4ypMJzeNooo
-				mp.set_property("time-pos",v+0.01)
+				mp.set_property("time-pos", v + 0.01)
 				return
 			end
 		end
@@ -51,27 +53,34 @@ function file_loaded()
 		"/watch.*[?&]v=([%w-_]+).*",
 		"/embed/([%w-_]+).*",
 		"^ytdl://([%w-_]+)$",
-		"-([%w-_]+)%."
+		"-([%w-_]+)%.",
 	}
 	local youtube_id = nil
 	local purl = mp.get_property("metadata/by-key/PURL", "")
-	for i,url in ipairs(urls) do
-		youtube_id = youtube_id or string.match(video_path, url) or string.match(video_referer, url) or string.match(purl, url)
-		if youtube_id then break end
+	for i, url in ipairs(urls) do
+		youtube_id = youtube_id
+			or string.match(video_path, url)
+			or string.match(video_referer, url)
+			or string.match(purl, url)
+		if youtube_id then
+			break
+		end
 	end
 
-	if not youtube_id or string.len(youtube_id) < 11 then return end
+	if not youtube_id or string.len(youtube_id) < 11 then
+		return
+	end
 	youtube_id = string.sub(youtube_id, 1, 11)
 
-	local args = {"curl", "-L", "-s", "-G", "--data-urlencode", ("categories=[%s]"):format(options.categories)}
+	local args = { "curl", "-L", "-s", "-G", "--data-urlencode", ("categories=[%s]"):format(options.categories) }
 	local url = options.server
 	if options.hash == "true" then
-		local sha = mp.command_native{
+		local sha = mp.command_native({
 			name = "subprocess",
 			capture_stdout = true,
-			args = {"sha256sum"},
-			stdin_data = youtube_id
-		}
+			args = { "sha256sum" },
+			stdin_data = youtube_id,
+		})
 		url = ("%s/%s"):format(url, string.sub(sha.stdout, 0, 4))
 	else
 		table.insert(args, "--data-urlencode")
@@ -79,12 +88,12 @@ function file_loaded()
 	end
 	table.insert(args, url)
 
-	local sponsors = mp.command_native{
+	local sponsors = mp.command_native({
 		name = "subprocess",
 		capture_stdout = true,
 		playback_only = false,
-		args = args
-	}
+		args = args,
+	})
 	if sponsors.stdout then
 		local json = utils.parse_json(sponsors.stdout)
 		if type(json) == "table" then
@@ -101,7 +110,7 @@ function file_loaded()
 
 			if ranges then
 				ON = true
-				mp.add_key_binding("b","sponsorblock",toggle)
+				mp.add_key_binding("b", "sponsorblock", toggle)
 				mp.observe_property("time-pos", "native", skip_ads)
 			end
 		end
@@ -109,7 +118,9 @@ function file_loaded()
 end
 
 function end_file()
-	if not ON then return end
+	if not ON then
+		return
+	end
 	mp.unobserve_property(skip_ads)
 	ranges = nil
 	ON = false

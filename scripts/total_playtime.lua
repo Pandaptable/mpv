@@ -3,22 +3,22 @@
 --~ If number of items in playlist didn't change since last calculation - it doesn't probe files anew.
 --~ requires ffprobe (ffmpeg)
 
-key_binding = 'F12'
+key_binding = "F12"
 -- save probed files for future reference -- ${fname} \t ${duration}
 save_probed = true
-saved_probed_filename = '~/.config/mpv/scripts/total_playtime.list'
+saved_probed_filename = "~/.config/mpv/scripts/total_playtime.list"
 
 -----------------------------------
-local assdraw = require('mp.assdraw')
+local assdraw = require("mp.assdraw")
 local osd_w, osd_h, aspect = mp.get_osd_size()
 
-saved_probed_filename = saved_probed_filename:gsub('~', os.getenv('HOME'))
+saved_probed_filename = saved_probed_filename:gsub("~", os.getenv("HOME"))
 
-local utils = require 'mp.utils'
+local utils = require("mp.utils")
 
 function disp_time(time)
-	local hours = math.floor(time/3600)
-	local minutes = math.floor((time % 3600)/60)
+	local hours = math.floor(time / 3600)
+	local minutes = math.floor((time % 3600) / 60)
 	local seconds = math.floor(time % 60)
 
 	return string.format("%02d:%02d:%02d", hours, minutes, seconds)
@@ -58,23 +58,22 @@ function total_time()
 				f, n = string.gsub(f, "/[^/]*/%.%./", "/", 1)
 			until n == 0
 
-			f = string.gsub(f, "\"", "\\\"")
+			f = string.gsub(f, '"', '\\"')
 
 			if save_probed and probed_file[f] then
 				fprobe = probed_file[f]
 			else
-				fprobe = io.popen('ffprobe -v quiet -of csv=p=0 -show_entries format=duration "'.. f .. '"'):read()
+				fprobe = io.popen('ffprobe -v quiet -of csv=p=0 -show_entries format=duration "' .. f .. '"'):read()
 
 				if fprobe and save_probed then
 					file = io.open(saved_probed_filename, "a")
-					file:write(f .. '\t' .. fprobe .."\n")
+					file:write(f .. "\t" .. fprobe .. "\n")
 					file:close()
 				end
 			end
-			if ( tonumber(fprobe) ~= nil) then
+			if tonumber(fprobe) ~= nil then
 				playlist[#playlist + 1] = { f, tonumber(fprobe), pl_num }
 			end
-
 
 			local ass = assdraw:ass_new()
 			ass:new_event()
@@ -86,7 +85,7 @@ function total_time()
 		end
 		playlist_total = #playlist
 
-        mp.set_osd_ass(0, 0, "{}")
+		mp.set_osd_ass(0, 0, "{}")
 	end
 
 	total_dur = 0
@@ -102,16 +101,17 @@ function total_time()
 		end
 	end
 
-	osdm = string.format(" %s / %s (%s%%) \n %s / %s (%.2fx) \n %s/%s",
-			disp_time(played_dur),
-			disp_time(total_dur),
-			math.floor(played_dur*100/total_dur),
-			disp_time(played_dur/mp.get_property_number("speed")),
-			disp_time(total_dur/mp.get_property_number("speed")),
-			mp.get_property_number("speed"),
-			mp.get_property("playlist-pos-1"),
-			mp.get_property("playlist-count")
-		)
+	osdm = string.format(
+		" %s / %s (%s%%) \n %s / %s (%.2fx) \n %s/%s",
+		disp_time(played_dur),
+		disp_time(total_dur),
+		math.floor(played_dur * 100 / total_dur),
+		disp_time(played_dur / mp.get_property_number("speed")),
+		disp_time(total_dur / mp.get_property_number("speed")),
+		mp.get_property_number("speed"),
+		mp.get_property("playlist-pos-1"),
+		mp.get_property("playlist-count")
+	)
 
 	mp.osd_message(osdm)
 end
@@ -130,7 +130,7 @@ reverse = 0
 function sort_playlist(start_0)
 	total_time()
 
-	table.sort(playlist, function (left, right)
+	table.sort(playlist, function(left, right)
 		-- print(left[2])
 		if reverse == 0 then
 			return left[2] < right[2]
@@ -145,19 +145,19 @@ function sort_playlist(start_0)
 		reverse = 0
 	end
 
-	out = ''
+	out = ""
 
 	for i, f in pairs(playlist) do
 		if f[2] ~= nil then
 			for i2, f2 in ipairs(mp.get_property_native("playlist")) do
 				if f2.filename == f[1] then
-					mp.commandv('playlist-move', i2 - 1, i - 1)
+					mp.commandv("playlist-move", i2 - 1, i - 1)
 
 					if f2.filename == mp.get_property("path") then
 						-- out = string.format('%s>>%s\t\t%s\n', out, disp_time(f[2]), f[1]:gsub('.+/', ''))
-						out = string.format('%s%s\t\t%s\n', out, disp_time(f[2]), f[1]:gsub('.+/', ''))
+						out = string.format("%s%s\t\t%s\n", out, disp_time(f[2]), f[1]:gsub(".+/", ""))
 					else
-						out = string.format('%s%s\t\t%s\n', out, disp_time(f[2]), f[1]:gsub('.+/', ''))
+						out = string.format("%s%s\t\t%s\n", out, disp_time(f[2]), f[1]:gsub(".+/", ""))
 					end
 					break
 				end
@@ -166,11 +166,11 @@ function sort_playlist(start_0)
 	end
 
 	if start_0 ~= nil then
-		mp.set_property('playlist-pos', 0)
-		os.execute('sleep .1')
+		mp.set_property("playlist-pos", 0)
+		os.execute("sleep .1")
 	end
 	mp.osd_message(out, 3)
 end
 
-mp.add_forced_key_binding('KP4', "sort_playlist", sort_playlist)
-mp.add_forced_key_binding('shift+KP4', "sort_playlist_to_0", sort_playlist_to_0)
+mp.add_forced_key_binding("KP4", "sort_playlist", sort_playlist)
+mp.add_forced_key_binding("shift+KP4", "sort_playlist_to_0", sort_playlist_to_0)

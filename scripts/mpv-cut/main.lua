@@ -1,7 +1,7 @@
 ---@diagnostic disable: duplicate-set-field, lowercase-global
 mp.msg.info("MPV-CUT LOADED")
 
-utils = require "mp.utils"
+utils = require("mp.utils")
 
 local function print(s)
 	mp.msg.info(s)
@@ -9,11 +9,13 @@ local function print(s)
 end
 
 local function table_to_str(o)
-	if type(o) == 'table' then
-		local s = ''
-		for k,v in pairs(o) do
-			if type(k) ~= 'number' then k = '"'..k..'"' end
-			s = s .. '['..k..'] = ' .. table_to_str(v) .. '\n'
+	if type(o) == "table" then
+		local s = ""
+		for k, v in pairs(o) do
+			if type(k) ~= "number" then
+				k = '"' .. k .. '"'
+			end
+			s = s .. "[" .. k .. "] = " .. table_to_str(v) .. "\n"
 		end
 		return s
 	else
@@ -50,53 +52,96 @@ ACTIONS = {}
 ACTIONS.COPY = function(d)
 	local args = {
 		"ffmpeg",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", d.inpath,
-		"-c", "copy",
-		"-map", "0",
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
+		"-c",
+		"copy",
+		"-map",
+		"0",
 		"-dn",
-		"-avoid_negative_ts", "make_zero",
-		utils.join_path(d.indir, "COPY_" .. d.channel .. "_" .. d.infile_noext .. "_FROM_" .. d.start_time_hms .. "_TO_" .. d.end_time_hms .. d.ext)
+		"-avoid_negative_ts",
+		"make_zero",
+		utils.join_path(
+			d.indir,
+			"COPY_"
+				.. d.channel
+				.. "_"
+				.. d.infile_noext
+				.. "_FROM_"
+				.. d.start_time_hms
+				.. "_TO_"
+				.. d.end_time_hms
+				.. d.ext
+		),
 	}
 	mp.command_native_async({
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function() print("Done") end)
+	}, function()
+		print("Done")
+	end)
 end
 
 ACTIONS.ENCODE = function(d)
 	local args = {
 		"ffmpeg",
-		"-nostdin", "-y",
-		"-loglevel", "error",
-		"-ss", d.start_time,
-		"-t", d.duration,
-		"-i", d.inpath,
-		"-pix_fmt", "yuv420p",
-		"-crf", "16",
-		"-preset", "superfast",
-		utils.join_path(d.indir, "ENCODE_" .. d.channel .. "_" .. d.infile_noext .. "_FROM_" .. d.start_time_hms .. "_TO_" .. d.end_time_hms .. d.ext)
+		"-nostdin",
+		"-y",
+		"-loglevel",
+		"error",
+		"-ss",
+		d.start_time,
+		"-t",
+		d.duration,
+		"-i",
+		d.inpath,
+		"-pix_fmt",
+		"yuv420p",
+		"-crf",
+		"16",
+		"-preset",
+		"superfast",
+		utils.join_path(
+			d.indir,
+			"ENCODE_"
+				.. d.channel
+				.. "_"
+				.. d.infile_noext
+				.. "_FROM_"
+				.. d.start_time_hms
+				.. "_TO_"
+				.. d.end_time_hms
+				.. d.ext
+		),
 	}
 	mp.command_native_async({
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function() print("Done") end)
+	}, function()
+		print("Done")
+	end)
 end
 
 ACTIONS.LIST = function(d)
 	local inpath = mp.get_property("path")
 	local outpath = inpath .. ".list"
 	local file = io.open(outpath, "a")
-	if not file then print("Error writing to cut list") return end
+	if not file then
+		print("Error writing to cut list")
+		return
+	end
 	local filesize = file:seek("end")
-	local s = "\n" .. d.channel
-		.. ":" .. d.start_time
-		.. ":" .. d.end_time
+	local s = "\n" .. d.channel .. ":" .. d.start_time .. ":" .. d.end_time
 	file:write(s)
 	local delta = file:seek("end") - filesize
 	io.close(file)
@@ -116,20 +161,22 @@ KEY_BOOKMARK_ADD = "i"
 KEY_CHANNEL_INC = "="
 KEY_CHANNEL_DEC = "-"
 
-home_config = mp.command_native({"expand-path", "~/.config/mpv-cut/config.lua"})
+home_config = mp.command_native({ "expand-path", "~/.config/mpv-cut/config.lua" })
 if pcall(require, "config") then
-    mp.msg.info("Loaded config file from script dir")
+	mp.msg.info("Loaded config file from script dir")
 elseif pcall(dofile, home_config) then
-    mp.msg.info("Loaded config file from " .. home_config)
+	mp.msg.info("Loaded config file from " .. home_config)
 else
-    mp.msg.info("No config loaded")
+	mp.msg.info("No config loaded")
 end
 
 for i, v in ipairs(CHANNEL_NAMES) do
-    CHANNEL_NAMES[i] = string.gsub(v, ":", "-")
+	CHANNEL_NAMES[i] = string.gsub(v, ":", "-")
 end
 
-if not ACTIONS[ACTION] then ACTION = next_table_key(ACTIONS, nil) end
+if not ACTIONS[ACTION] then
+	ACTION = next_table_key(ACTIONS, nil)
+end
 
 START_TIME = nil
 
@@ -178,7 +225,11 @@ local function text_overlay_on()
 end
 
 local function print_or_update_text_overlay(content)
-	if START_TIME then text_overlay_on() else print(content) end
+	if START_TIME then
+		text_overlay_on()
+	else
+		print(content)
+	end
 end
 
 local function cycle_action()
@@ -189,7 +240,9 @@ end
 local function cut(start_time, end_time)
 	local d = get_data()
 	local t = get_times(start_time, end_time)
-	for k, v in pairs(t) do d[k] = v end
+	for k, v in pairs(t) do
+		d[k] = v
+	end
 	mp.msg.info(ACTION)
 	mp.msg.info(table_to_str(d))
 	ACTIONS[ACTION](d)
@@ -228,18 +281,22 @@ end
 local function bookmarks_load()
 	local inpath = get_bookmark_file_path()
 	local file = io.open(inpath, "r")
-	if not file then return end
+	if not file then
+		return
+	end
 	local arr = {}
 	for line in file:lines() do
 		if tonumber(line) then
 			table.insert(arr, {
 				time = tonumber(line),
-				title = "chapter_" .. line
+				title = "chapter_" .. line,
 			})
 		end
 	end
 	file:close()
-	table.sort(arr, function(a, b) return a.time < b.time end)
+	table.sort(arr, function(a, b)
+		return a.time < b.time
+	end)
 	mp.set_property_native("chapter-list", arr)
 end
 
@@ -247,7 +304,10 @@ local function bookmark_add()
 	local d = get_data()
 	local outpath = get_bookmark_file_path()
 	local file = io.open(outpath, "a")
-	if not file then print("Failed to open bookmark file for writing") return end
+	if not file then
+		print("Failed to open bookmark file for writing")
+		return
+	end
 	local out_string = mp.get_property_number("time-pos") .. "\n"
 	local filesize = file:seek("end")
 	file:write(out_string)
@@ -264,7 +324,9 @@ local function channel_inc()
 end
 
 local function channel_dec()
-	if CHANNEL >= 2 then CHANNEL = CHANNEL - 1 end
+	if CHANNEL >= 2 then
+		CHANNEL = CHANNEL - 1
+	end
 	bookmarks_load()
 	print_or_update_text_overlay(get_current_channel_name())
 end
@@ -276,4 +338,4 @@ mp.add_key_binding(KEY_CHANNEL_INC, "channel_inc", channel_inc)
 mp.add_key_binding(KEY_CHANNEL_DEC, "channel_dec", channel_dec)
 mp.add_key_binding(KEY_CYCLE_ACTION, "cycle_action", cycle_action)
 
-mp.register_event('file-loaded', bookmarks_load)
+mp.register_event("file-loaded", bookmarks_load)

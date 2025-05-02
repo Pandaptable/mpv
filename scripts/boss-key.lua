@@ -14,30 +14,36 @@
   * xdotool is required on Xorg(Linux)
 --]]
 
-local mp = require 'mp'
-local utils = require 'mp.utils'
+local mp = require("mp")
+local utils = require("mp.utils")
 
 local platform = nil --set to 'linux', 'windows' or 'macos' to override automatic assign
 if not platform then
-    local o = {}
-    if mp.get_property_native('options/vo-mmcss-profile', o) ~= o then
-        platform = 'windows'
-    elseif mp.get_property_native('options/macos-force-dedicated-gpu', o) ~= o then
-        platform = 'macos'
-    else
-        platform = 'linux'
-    end
+	local o = {}
+	if mp.get_property_native("options/vo-mmcss-profile", o) ~= o then
+		platform = "windows"
+	elseif mp.get_property_native("options/macos-force-dedicated-gpu", o) ~= o then
+		platform = "macos"
+	else
+		platform = "linux"
+	end
 end
 
 -- TODO: macOS implementation?
 function boss_key()
 	mp.set_property_native("pause", true)
-	if platform == 'windows' then
-	    mp.command([[run cmd /c echo m > \\.\pipe\mpv-boss-key-]]..utils.getpid())
-	elseif platform == 'macos' then
-	    utils.subprocess({ args = {'osascript', '-e', 'tell application "System Events" to set the visible of the first process whose frontmost is true to false'} })
-	elseif platform == 'linux' then
-	    utils.subprocess({ args = {'xdotool', 'getactivewindow', 'windowminimize'} })
+	if platform == "windows" then
+		mp.command([[run cmd /c echo m > \\.\pipe\mpv-boss-key-]] .. utils.getpid())
+	elseif platform == "macos" then
+		utils.subprocess({
+			args = {
+				"osascript",
+				"-e",
+				'tell application "System Events" to set the visible of the first process whose frontmost is true to false',
+			},
+		})
+	elseif platform == "linux" then
+		utils.subprocess({ args = { "xdotool", "getactivewindow", "windowminimize" } })
 	end
 end
 
@@ -50,13 +56,19 @@ end
 -- Events and other async were extremely finnicky. Because of these reasons,
 -- and after many, many rewrites, I've arrived at the unorthodox mess that is
 -- the code below. It's not pretty, but at l(e)ast it works reliably.
-if platform == 'windows' then
-    mp.command_native_async({
-        name = "subprocess",
-        playback_only = false,
-        detach = true,
-        args = {'powershell', '-NoProfile', '-Command', [[&{
-$bosspid = ]]..utils.getpid()..[[
+if platform == "windows" then
+	mp.command_native_async({
+		name = "subprocess",
+		playback_only = false,
+		detach = true,
+		args = {
+			"powershell",
+			"-NoProfile",
+			"-Command",
+			[[&{
+$bosspid = ]]
+				.. utils.getpid()
+				.. [[
 
 # Construct the named pipe's name
 $pipename = -join('mpv-boss-key-',$bosspid)
@@ -100,7 +112,9 @@ while($true) {
     Start-Sleep 1
     if ($bossproc.HasExited) { $exitsequence.Invoke() }
 }
-}]]}}, function()end)
+}]],
+		},
+	}, function() end)
 end
 
-mp.add_key_binding('b', 'boss-key', boss_key)
+mp.add_key_binding("b", "boss-key", boss_key)

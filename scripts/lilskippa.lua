@@ -44,13 +44,13 @@
 -- https://github.com/detuur/mpv-scripts/blob/master/skiptosilence.lua
 --
 
-local mp = require 'mp'
+local mp = require("mp")
 
-local options = require 'mp.options'
+local options = require("mp.options")
 local o = {
 	scdet_args = "6.0",
 	blackdetect_args = "0.1",
-	silencedetect_args = "d=0.5"
+	silencedetect_args = "d=0.5",
 }
 options.read_options(o)
 
@@ -127,7 +127,8 @@ function skip2scene()
 		mp.command("no-osd change-list vf add @skip2scene:scdet=" .. o.scdet_args)
 	else
 		mp.commandv("show-text", "Cancelled skip to scene")
-		skipping2scene = false; scd_time = nil;
+		skipping2scene = false
+		scd_time = nil
 		restore("vf", "@skip2scene")
 	end
 end
@@ -138,7 +139,8 @@ mp.observe_property("vf-metadata/skip2scene", "native", function(_, metadata)
 			scd_time = metadata["lavfi.scd.time"]
 		elseif metadata["lavfi.scd.time"] > scd_time then
 			mp.commandv("show-text", "Skip to scene complete")
-			skipping2scene = false; scd_time = nil;
+			skipping2scene = false
+			scd_time = nil
 			restore("vf", "@skip2scene")
 		end
 	end
@@ -147,4 +149,3 @@ end)
 mp.add_key_binding("%", "skip2scene", skip2scene)
 mp.add_key_binding("^", "skip2black", skip2black)
 mp.add_key_binding("&", "skip2silence", skip2silence)
-
