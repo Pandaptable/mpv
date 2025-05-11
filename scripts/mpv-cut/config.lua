@@ -1,8 +1,24 @@
 ---@diagnostic disable: duplicate-set-field
 
-local function print(s)
-	mp.msg.info(s)
-	mp.osd_message(s)
+local function print(message)
+	mp.msg.info(message)
+	mp.osd_message(message)
+end
+
+local function copy_to_clipboard(message)
+	local file_path = mp.get_property(path)
+	mp.msg.info(message)
+	mp.osd_message(message .. " | " .. file_path .. "copied to clipboard.")
+
+	-- PowerShell command to copy file paths to the clipboard
+	local powershell_command = [[
+	Add-Type -AssemblyName System.Windows.Forms;
+	$files = [System.Collections.Specialized.StringCollection]::new();
+	$files.Add(']] .. file_path:gsub("'", "''") .. [[');
+	[System.Windows.Forms.Clipboard]::SetFileDropList($files);
+	]]
+
+	mp.commandv("run", "powershell", "-nop", "-c", powershell_command)
 end
 
 -- Key config
@@ -45,7 +61,7 @@ ACTIONS.COPY = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		print("Done")
+		copy_to_clipboard("Done")
 	end)
 end
 
@@ -85,7 +101,7 @@ ACTIONS.ENCODE_h265 = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		print("Done")
+		copy_to_clipboard("Done")
 	end)
 end
 
@@ -125,7 +141,7 @@ ACTIONS.ENCODE_h264 = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		print("Done")
+		copy_to_clipboard("Done")
 	end)
 end
 
@@ -240,7 +256,7 @@ ACTIONS.ENCODE_AUDIO = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		print("Done")
+		copy_to_clipboard("Done")
 	end)
 end
 

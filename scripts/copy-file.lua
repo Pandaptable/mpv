@@ -1,4 +1,4 @@
---TODO: make platform-independent (windows only atm (i think))
+--TODO: make platform-independent (windows only atm)
 local mp = require("mp")
 
 local function copy_to_clipboard(key, message)
