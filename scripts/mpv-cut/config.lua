@@ -5,10 +5,9 @@ local function print(message)
 	mp.osd_message(message)
 end
 
-local function copy_to_clipboard(message)
-	local file_path = mp.get_property(path)
+local function copy_to_clipboard(message, file_path)
 	mp.msg.info(message)
-	mp.osd_message(message .. " | " .. file_path .. "copied to clipboard.")
+	mp.osd_message(message .. "\n" .. file_path .. "copied to clipboard.")
 
 	-- PowerShell command to copy file paths to the clipboard
 	local powershell_command = [[
@@ -61,7 +60,7 @@ ACTIONS.COPY = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		copy_to_clipboard("Done")
+		copy_to_clipboard("Done", utils.join_path(d.indir, "COPY_" .. d.infile_noext .. d.ext))
 	end)
 end
 
@@ -101,7 +100,7 @@ ACTIONS.ENCODE_h265 = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		copy_to_clipboard("Done")
+		copy_to_clipboard("Done", utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"))
 	end)
 end
 
@@ -141,7 +140,7 @@ ACTIONS.ENCODE_h264 = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		copy_to_clipboard("Done")
+		copy_to_clipboard("Done", utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"))
 	end)
 end
 
@@ -256,7 +255,7 @@ ACTIONS.ENCODE_AUDIO = function(d)
 		args = args,
 		playback_only = false,
 	}, function()
-		copy_to_clipboard("Done")
+		copy_to_clipboard("Done", utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".ogg"))
 	end)
 end
 
