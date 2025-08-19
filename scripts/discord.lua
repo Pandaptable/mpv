@@ -3,7 +3,6 @@ local utils = require("mp.utils")
 local msg = require("mp.msg")
 local opts = require("mp.options")
 
--- Function to get the temporary path directory
 local function get_temp_path()
 	local dir_sep = package.config:match("([^\n]*)\n?")
 	local temp_file_path = os.tmpname()
@@ -15,7 +14,6 @@ local function get_temp_path()
 	return temp_file_path:sub(1, #temp_file_path - sep_idx)
 end
 
--- Function to join paths
 local function join_paths(...)
 	local path = ""
 	for _, v in ipairs({ ... }) do
@@ -24,7 +22,6 @@ local function join_paths(...)
 	return path
 end
 
--- Initialize temp directory and pid
 -- local tempDir = get_temp_path()
 -- local ppid = utils.getpid()
 
@@ -32,13 +29,11 @@ end
 -- os.execute("mkdir " .. join_paths(tempDir, "mpvSockets") .. " 2>/dev/null")
 -- mp.set_property("options/input-ipc-server", join_paths(tempDir, "mpvSockets", ppid))
 
--- Shutdown handler to remove socket on exit
 local function shutdown_handler()
 	os.remove(join_paths(tempDir, "mpvSockets", ppid))
 end
 mp.register_event("shutdown", shutdown_handler)
 
--- Load and read configuration options
 local options = {
 	key = "D",
 	active = true,
@@ -49,13 +44,11 @@ local options = {
 
 opts.read_options(options, "discord")
 
--- Validate binary path configuration
 if options.binary_path == "" then
 	msg.fatal("Missing binary path in config file.")
 	os.exit(1)
 end
 
--- Check if file exists
 local function file_exists(path)
 	local f = io.open(path, "r")
 	if f then
@@ -65,23 +58,17 @@ local function file_exists(path)
 	return false
 end
 
--- Ensure binary file exists
 if not file_exists(options.binary_path) then
 	msg.fatal("The specified binary path does not exist.")
 	os.exit(1)
 end
 
--- Print version info
-local version = "1.6.1"
-msg.info(("mpv-discord v%s by tnychn"):format(version))
-
--- Define socket path
+local tempDir = get_temp_path()
+local ppid = utils.getpid()
 local socket_path = join_paths(tempDir, "mpvSockets", ppid)
 
--- Command to start subprocess
 local cmd
 
--- Start subprocess function
 local function start()
 	if not cmd then
 		cmd = mp.command_native_async({
@@ -98,7 +85,6 @@ local function start()
 	end
 end
 
--- Stop subprocess function
 local function stop()
 	if cmd then
 		mp.abort_async_command(cmd)
@@ -108,12 +94,10 @@ local function stop()
 	end
 end
 
--- Register event to start on file load
 if options.active then
 	mp.register_event("file-loaded", start)
 end
 
--- Keybinding to toggle Discord
 mp.add_key_binding(options.key, "toggle-discord", function()
 	if cmd then
 		stop()
@@ -122,14 +106,12 @@ mp.add_key_binding(options.key, "toggle-discord", function()
 	end
 end)
 
--- Register shutdown handler
 mp.register_event("shutdown", function()
 	if cmd then
 		stop()
 	end
 end)
 
--- Autohide functionality based on pause status
 if options.autohide_threshold > 0 then
 	local timer
 	local t = options.autohide_threshold

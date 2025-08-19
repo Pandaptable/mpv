@@ -7,7 +7,7 @@ end
 
 local function copy_to_clipboard(message, file_path)
 	mp.msg.info(message)
-	mp.osd_message(message .. "\n" .. file_path .. "copied to clipboard.")
+	mp.osd_message(message .. "\n" .. file_path .. " copied to clipboard.")
 
 	-- PowerShell command to copy file paths to the clipboard
 	local powershell_command = [[
@@ -30,7 +30,7 @@ KEY_BOOKMARK_ADD = "i"
 ACTION = "ENCODE_h264"
 
 -- Delete a default action
-ACTIONS.LIST = nil
+-- ACTIONS.LIST = nil
 ACTIONS.ENCODE = nil
 
 ACTIONS.COPY = function(d)
@@ -83,10 +83,10 @@ ACTIONS.ENCODE_h265 = function(d)
 		"hevc_nvenc",
 		"-profile:v",
 		"main",
-		"-pix_fmt",
-		"yuv420p",
-		"-color_range",
-		"2",
+		-- "-pix_fmt",
+		-- "yuv420p",
+		-- "-color_range",
+		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -123,10 +123,10 @@ ACTIONS.ENCODE_h264 = function(d)
 		"h264_nvenc",
 		"-profile:v",
 		"high",
-		"-pix_fmt",
-		"yuv420p",
-		"-color_range",
-		"2",
+		-- "-pix_fmt",
+		-- "yuv420p",
+		-- "-color_range",
+		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -163,10 +163,10 @@ ACTIONS.COPY_ENCODE_h264 = function(d)
 		"h264_nvenc",
 		"-profile:v",
 		"high",
-		"-pix_fmt",
-		"yuv420p",
-		"-color_range",
-		"2",
+		-- "-pix_fmt",
+		-- "yuv420p",
+		-- "-color_range",
+		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -206,10 +206,10 @@ ACTIONS.COPY_ENCODE_h265 = function(d)
 		"hevc_nvenc",
 		"-profile:v",
 		"main",
-		"-pix_fmt",
-		"yuv420p",
-		"-color_range",
-		"2",
+		-- "-pix_fmt",
+		-- "yuv420p",
+		-- "-color_range",
+		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
