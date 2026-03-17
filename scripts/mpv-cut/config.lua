@@ -34,6 +34,9 @@ ACTION = "ENCODE_h264"
 ACTIONS.ENCODE = nil
 
 ACTIONS.COPY = function(d)
+	local output_path = utils.join_path(d.indir, "COPY_" .. d.infile_noext .. ".mp4")
+
+
 	local args = {
 		"ffmpeg",
 		"-nostdin",
@@ -59,12 +62,33 @@ ACTIONS.COPY = function(d)
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function()
-		copy_to_clipboard("Done", utils.join_path(d.indir, "COPY_" .. d.infile_noext .. d.ext))
+	}, function(success, result, error)
+		if success then
+			local python_args = {
+				"uv",
+				"run",
+				mp.command_native({ "expand-path", "~~/scripts/mpv-cut/clip.py" }),
+				d.inpath,
+				output_path,
+			}
+
+			mp.command_native_async({
+				name = "subprocess",
+				args = python_args,
+				playback_only = false,
+			}, function()
+				copy_to_clipboard("Done", output_path)
+			end)
+		else
+			mp.msg.error("FFmpeg encoding failed: " .. (error or "unknown error"))
+		end
 	end)
 end
 
 ACTIONS.ENCODE_h265 = function(d)
+	local output_path = utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4")
+
+
 	local args = {
 		"ffmpeg",
 		"-hwaccel",
@@ -83,10 +107,6 @@ ACTIONS.ENCODE_h265 = function(d)
 		"hevc_nvenc",
 		"-profile:v",
 		"main",
-		-- "-pix_fmt",
-		-- "yuv420p",
-		-- "-color_range",
-		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -99,12 +119,32 @@ ACTIONS.ENCODE_h265 = function(d)
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function()
-		copy_to_clipboard("Done", utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"))
+	}, function(success, result, error)
+		if success then
+			local python_args = {
+				"uv",
+				"run",
+				mp.command_native({ "expand-path", "~~/scripts/mpv-cut/clip.py" }),
+				d.inpath,
+				output_path,
+			}
+
+			mp.command_native_async({
+				name = "subprocess",
+				args = python_args,
+				playback_only = false,
+			}, function()
+				copy_to_clipboard("Done", output_path)
+			end)
+		else
+			mp.msg.error("FFmpeg encoding failed: " .. (error or "unknown error"))
+		end
 	end)
 end
 
 ACTIONS.ENCODE_h264 = function(d)
+	local output_path = utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4")
+
 	local args = {
 		"ffmpeg",
 		"-hwaccel",
@@ -123,10 +163,6 @@ ACTIONS.ENCODE_h264 = function(d)
 		"h264_nvenc",
 		"-profile:v",
 		"high",
-		-- "-pix_fmt",
-		-- "yuv420p",
-		-- "-color_range",
-		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -139,8 +175,26 @@ ACTIONS.ENCODE_h264 = function(d)
 		name = "subprocess",
 		args = args,
 		playback_only = false,
-	}, function()
-		copy_to_clipboard("Done", utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ".mp4"))
+	}, function(success, result, error)
+		if success then
+			local python_args = {
+				"uv",
+				"run",
+				mp.command_native({ "expand-path", "~~/scripts/mpv-cut/clip.py" }),
+				d.inpath,
+				output_path,
+			}
+
+			mp.command_native_async({
+				name = "subprocess",
+				args = python_args,
+				playback_only = false,
+			}, function()
+				copy_to_clipboard("Done", output_path)
+			end)
+		else
+			mp.msg.error("FFmpeg encoding failed: " .. (error or "unknown error"))
+		end
 	end)
 end
 
@@ -163,10 +217,6 @@ ACTIONS.COPY_ENCODE_h264 = function(d)
 		"h264_nvenc",
 		"-profile:v",
 		"high",
-		-- "-pix_fmt",
-		-- "yuv420p",
-		-- "-color_range",
-		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
@@ -206,10 +256,6 @@ ACTIONS.COPY_ENCODE_h265 = function(d)
 		"hevc_nvenc",
 		"-profile:v",
 		"main",
-		-- "-pix_fmt",
-		-- "yuv420p",
-		-- "-color_range",
-		-- "2",
 		"-preset",
 		"p7",
 		"-rc",
