@@ -1,41 +1,24 @@
--- Show OSD clock
---
--- Shows OSD clock periodicaly with many configurable options,
--- OSD options like duration, alignment, border, scale could be set in ~/.config/mpv/mpv.conf
--- OSD-clock configurable options:
---   interval ... how often to show OSD clock, either seconds or human friendly format like '1h 33m 5s' is supported (default '15m')
---   format   ... date format string (default "%H:%M")
---   duration ... how long [in seconds] OSD stays, fractional values supported (default 1.2)
---   key      ... to bind show OSD clock on request (false for no binding; default 'h' key)
---   name     ... symbolic name (can be used in input.conf, see mpv doc for details; default 'show-clock')
---
--- To customize configuration place osd-clock.conf into ~/.config/mpv/lua-settings/ and edit
---
--- Place script into ~/.config/mpv/scripts/ for autoload
---
--- GitHub: https://github.com/blue-sky-r/mpv/tree/master/scripts
-
+-- osd-clock-uosc.lua
 local options = require("mp.options")
-local utils = require("mp.utils")
-
--- defaults
+-- Configuration
 local cfg = {
 	interval = "15m",
 	format = "%H:%M",
 	duration = 2.5,
 	key = "h",
 	name = "show-clock",
+	-- Styling
+	font_size = 48,
+	margin = 30,
 }
 
--- human readable time format to seconds: 15m 3s -> 903
+options.read_options(cfg, "osd-clock")
 local function htime2sec(hstr)
 	local s = tonumber(hstr)
-	-- only number withoout units
 	if s then
 		return s
 	end
-	-- human units h,m,s to seconds
-	local hu = { h = 60 * 60, m = 60, s = 1 }
+	local hu = { h = 3600, m = 60, s = 1 }
 	s = 0
 	for unit, mult in pairs(hu) do
 		local _, _, num = string.find(hstr, "(%d+)" .. unit)
@@ -46,50 +29,60 @@ local function htime2sec(hstr)
 	return s
 end
 
--- calc aligned timeout in sec
-local function aligned_timeout(align)
-	local time = os.time()
-	local atout = align * math.ceil(time / align) - time
-	return atout
+-- Clear the OSD
+local function clear_clock()
+	mp.set_osd_ass(0, 0, "")
 end
+local timer = nil
 
--- read lua-settings/osd-clock.conf
-options.read_options(cfg, "osd-clock")
+local function show_clock(duration)
+	local time_str = os.date(cfg.format)
+	local dur = duration or cfg.duration
+		-- Top-right drawing using ASS
+		local w, h = mp.get_osd_size()
+		if not w or not h then
+			return
+		end
 
--- log active config
-mp.msg.verbose("cfg = " .. utils.to_string(cfg))
+		-- Style mimicking uosc: White text, thin dark border, no shadow
+		local ass = string.format(
+			"{\\an9\\bord1\\shad0\\fs%d\\pos(%d,%d)}%s",
+			cfg.font_size,
+			w - cfg.margin,
+			cfg.margin,
+			time_str
+		)
 
--- OSD show clock
-local function osd_clock()
-	local s = os.date(cfg.format)
-	mp.osd_message(s, cfg.duration)
+		mp.set_osd_ass(w, h, ass)
+
+		-- Custom timer to clear the ASS layer
+		if timer then
+			timer:kill()
+		end
+		timer = mp.add_timeout(dur, clear_clock)
+
 end
-
--- non empty interval enables osd clock
-if cfg.interval then
-	-- log
-	mp.msg.info("interval:" .. cfg.interval .. ", format:" .. cfg.format)
-
-	-- osd timer
-	local osd_timer = mp.add_periodic_timer(htime2sec(cfg.interval), osd_clock)
-	osd_timer:stop()
-
-	-- start osd timer exactly at interval boundary
-	local delay = aligned_timeout(htime2sec(cfg.interval))
-
-	-- delayed start
-	mp.add_timeout(delay, function()
-		osd_timer:resume()
-		osd_clock()
-	end)
-
-	-- log startup delay for osd timer
-	mp.msg.verbose("for osd_interval:" .. cfg.interval .. " calculated startup delay:" .. delay)
-
-	-- optional bind to the key
-	if cfg.key then
-		mp.add_key_binding(cfg.key, cfg.name, osd_clock)
-		-- log binding
-		mp.msg.verbose("key:'" .. cfg.key .. "' bound to '" .. cfg.name .. "'")
+-- Timer logic
+if cfg.interval and cfg.interval ~= "" then
+	local interval_sec = htime2sec(cfg.interval)
+	local function align_and_start()
+		local time = os.time()
+		local delay = interval_sec * math.ceil(time / interval_sec) - time
+		mp.add_timeout(delay, function()
+			show_clock()
+			mp.add_periodic_timer(interval_sec, show_clock)
+		end)
 	end
+	align_and_start()
 end
+
+-- Keybind and Messages
+if cfg.key then
+	mp.add_key_binding(cfg.key, cfg.name, show_clock)
+end
+mp.register_script_message("flash-clock", function()
+	show_clock(1)
+end)
+mp.register_script_message("show-clock", function()
+	show_clock()
+end)
