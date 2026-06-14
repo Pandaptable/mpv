@@ -4,9 +4,9 @@ local utils = require("mp.utils")
 local ffi = require("ffi")
 
 local options = {
-	enabled = false,
+	enabled = true,
 	application_id = "1031137720317263873",
-	use_local_video_filename = true -- Set to false if you have a script like https://raw.githubusercontent.com/zenwarr/mpv-config/refs/heads/master/scripts/guess-media-title.lua setting the title
+	use_local_video_filename = false -- Set to false if you have a script like https://raw.githubusercontent.com/zenwarr/mpv-config/refs/heads/master/scripts/guess-media-title.lua setting the title
 }
 opts.read_options(options, "mpv_discord")
 
