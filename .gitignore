@@ -9,3 +9,5 @@ mpv.log
 # (userid)
 sponsorblock.conf
 subtitles/
+script-opts/mpv-cut-settings.json
+*.bgra

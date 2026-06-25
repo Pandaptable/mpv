@@ -887,6 +887,7 @@ local function clear()
 	end
 	last_seek_time = nil
 	show_thumbnail = false
+	mp.set_property_bool("user-data/thumbfast/visible", false)
 	last_x = nil
 	last_y = nil
 	if script_name then
@@ -933,7 +934,9 @@ local function thumb(time, r_x, r_y, script)
 	script_name = script
 	if last_x ~= x or last_y ~= y or not show_thumbnail then
 		show_thumbnail = true
-		last_x, last_y = x, y
+		mp.set_property_bool("user-data/thumbfast/visible", true)
+		last_x = x
+		last_y = y
 		draw(real_w, real_h, script)
 	end
 
