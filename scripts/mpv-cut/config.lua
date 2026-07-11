@@ -253,43 +253,140 @@ local function run_ffmpeg_with_progress(args, duration_sec, on_done)
 	end
 
 	local total_us = duration_sec * 1000000
-	local timer = nil
+	local poll_timer = nil
+	local anim_timer = nil
 	local done = false
+
+	local RES_X, RES_Y = 1280, 720
+	local BAR_W, BAR_H = 480, 16
+	local BAR_X = (RES_X - BAR_W) / 2
+	local BAR_Y = 40
+	local RADIUS = BAR_H / 2
+
+	local overlay = mp.create_osd_overlay("ass-events")
+	overlay.res_x = RES_X
+	overlay.res_y = RES_Y
+	overlay.z = 100
+
+	local shown_pct = 0
+	local target_pct = 0
+	local cur_speed = nil
+
+	local function rounded_rect(x, y, w, h, r)
+		if w <= 0 then
+			return ""
+		end
+		r = math.min(r, w / 2, h / 2)
+		local x2, y2 = x + w, y + h
+		local c = r * 0.5523
+		return string.format(
+			"m %d %d "
+				.. "l %d %d "
+				.. "b %d %d %d %d %d %d "
+				.. "l %d %d "
+				.. "b %d %d %d %d %d %d "
+				.. "l %d %d "
+				.. "b %d %d %d %d %d %d "
+				.. "l %d %d "
+				.. "b %d %d %d %d %d %d",
+			x + r, y,
+			x2 - r, y,
+			x2 - r + c, y, x2, y + r - c, x2, y + r,
+			x2, y2 - r,
+			x2, y2 - r + c, x2 - r + c, y2, x2 - r, y2,
+			x + r, y2,
+			x + r - c, y2, x, y2 - r + c, x, y2 - r,
+			x, y + r,
+			x, y + r - c, x + r - c, y, x + r, y
+		)
+	end
+
+	local function draw()
+		local pct = shown_pct
+		local fill_w = BAR_W * pct / 100
+		local label
+		if cur_speed then
+			label = string.format("mpv-cut   %d%%   %.1fx", math.floor(pct + 0.5), cur_speed)
+		else
+			label = string.format("mpv-cut   %d%%", math.floor(pct + 0.5))
+		end
+		local ass = string.format(
+			"{\\an8\\pos(%d,%d)\\fs28\\bord2\\shad0\\1c&Hf7a6cb&\\3c&H000000&}%s\n",
+			RES_X / 2,
+			BAR_Y - 30,
+			label
+		)
+		ass = ass
+			.. string.format(
+				"{\\pos(0,0)\\bord0\\shad0\\1c&H000000&\\alpha&H80&\\p1}%s{\\p0}\n",
+				rounded_rect(BAR_X, BAR_Y, BAR_W, BAR_H, RADIUS)
+			)
+		if fill_w > 1 then
+			ass = ass
+				.. string.format(
+					"{\\pos(0,0)\\bord0\\shad0\\1c&Hf7a6cb&\\p1}%s{\\p0}",
+					rounded_rect(BAR_X, BAR_Y, fill_w, BAR_H, RADIUS)
+				)
+		end
+		overlay.data = ass
+		overlay:update()
+	end
 
 	local function cleanup()
 		done = true
-		if timer then
-			timer:stop()
-			timer = nil
+		if poll_timer then
+			poll_timer:stop()
+			poll_timer = nil
 		end
-		mp.osd_message("")
+		if anim_timer then
+			anim_timer:stop()
+			anim_timer = nil
+		end
+		overlay:remove()
 		pcall(os.remove, progress_file)
 	end
 
-	timer = mp.add_periodic_timer(0.5, function()
+	draw()
+
+	anim_timer = mp.add_periodic_timer(1 / 60, function()
+		if done then
+			return
+		end
+		local diff = target_pct - shown_pct
+		if math.abs(diff) < 0.05 then
+			shown_pct = target_pct
+		else
+			shown_pct = shown_pct + diff * 0.12
+		end
+		draw()
+	end)
+
+	poll_timer = mp.add_periodic_timer(0.25, function()
 		if done then
 			return
 		end
 		local f = io.open(progress_file, "r")
 		if not f then
-			mp.osd_message("mpv-cut  encoding...", 1)
 			return
 		end
 		local content = f:read("*all")
 		f:close()
 
-		local elapsed_us = content:match("out_time_ms=(%d+)") or content:match("out_time_us=(%d+)")
+		local elapsed_us
+		for m in content:gmatch("out_time_us=(%d+)") do
+			elapsed_us = m
+		end
+		if not elapsed_us then
+			for m in content:gmatch("out_time_ms=(%d+)") do
+				elapsed_us = m
+			end
+		end
+		for m in content:gmatch("speed=%s*([%d.]+)x") do
+			cur_speed = tonumber(m)
+		end
+
 		if elapsed_us and total_us > 0 then
-			local elapsed = tonumber(elapsed_us)
-			local pct = math.min(100, math.floor(elapsed / total_us * 100))
-			local speed = content:match("speed=([%d.]+)x")
-			local bar_w = 20
-			local filled = math.floor(pct / 100 * bar_w)
-			local bar = string.rep("#", filled) .. string.rep("-", bar_w - filled)
-			local suffix = speed and (" %.1fx"):format(tonumber(speed)) or ""
-			mp.osd_message(string.format("mpv-cut  [%s] %3d%%%s", bar, pct, suffix), 1)
-		else
-			mp.osd_message("mpv-cut  encoding...", 1)
+			target_pct = math.min(100, tonumber(elapsed_us) / total_us * 100)
 		end
 	end)
 
