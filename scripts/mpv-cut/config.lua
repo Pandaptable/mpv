@@ -44,11 +44,28 @@ ENCODE_SETTINGS = {
 
 local settings_path = mp.command_native({ "expand-path", "~~/mpv-opts/mpv-cut-settings.json" })
 
+local function ensure_settings_dir()
+	local dir = utils.split_path(settings_path)
+	-- utils.file_info returns nil if the path doesn't exist yet
+	if not utils.file_info(dir) then
+		local args
+		if package.config:sub(1, 1) == "\\" then
+			args = { "cmd", "/c", "mkdir", (dir:gsub("/", "\\")) }
+		else
+			args = { "mkdir", "-p", dir }
+		end
+		mp.command_native({ name = "subprocess", args = args, playback_only = false })
+	end
+end
+
 local function save_settings()
-	local f = io.open(settings_path, "w")
+	ensure_settings_dir()
+	local f, err = io.open(settings_path, "w")
 	if f then
 		f:write(utils.format_json(ENCODE_SETTINGS))
 		f:close()
+	else
+		mp.msg.error("mpv-cut: failed to save settings: " .. tostring(err))
 	end
 end
 

@@ -3,12 +3,39 @@ local msg = require 'mp.msg'
 local assdraw = require 'mp.assdraw'
 
 local config_dir = mp.command_native({"expand-path", "~~/"})
+local markers_dir = config_dir .. "/markers"
+
+local bgra_index = nil
+
+local function build_bgra_index()
+    local index = {}
+    local function scan(dir)
+        local files = utils.readdir(dir, "files")
+        if files then
+            for _, fname in ipairs(files) do
+                if fname:sub(-5) == ".bgra" then
+                    local name = fname:sub(1, -6)
+                    if not index[name] then
+                        index[name] = dir .. "/" .. fname
+                    end
+                end
+            end
+        end
+        local dirs = utils.readdir(dir, "dirs")
+        if dirs then
+            for _, sub in ipairs(dirs) do
+                scan(dir .. "/" .. sub)
+            end
+        end
+    end
+    scan(markers_dir)
+    return index
+end
 
 local function get_bgra(icon_name)
-    local path = config_dir .. "/markers/" .. icon_name .. ".bgra"
-    local f = io.open(path, "r")
-    if f then
-        f:close()
+    if not bgra_index then bgra_index = build_bgra_index() end
+    local path = bgra_index[icon_name]
+    if path then
         return path, 32, 32
     end
     return nil
@@ -188,6 +215,10 @@ local function update_visibility()
     local mouse_near = mouse.y >= (ay - proximity_out)
     local should_be_visible = pause or idle or mouse_near
     
+    -- Vertical center of the timeline band, so markers are drawn directly on
+    -- top of the timeline itself instead of floating above it.
+    local timeline_cy = ay + size_max / 2
+    
     if should_be_visible then
         is_visible = true
         
@@ -240,7 +271,7 @@ local function update_visibility()
             used_ids[id] = true
             m._has_bgra = true
             bgra_times[#bgra_times + 1] = m.time
-            mp.command_native_async({"overlay-add", id, math.floor(s.mx - 16), math.floor(ay - 6 - 32), m.bgra, 0, "bgra", 32, 32, 128}, function() end)
+            mp.command_native_async({"overlay-add", id, math.floor(s.mx - 16), math.floor(timeline_cy - 16), m.bgra, 0, "bgra", 32, 32, 128}, function() end)
             overlays_added[id] = true
         end
         
@@ -285,7 +316,7 @@ local function update_visibility()
             end
             
             local r = 2.5 + (5.5 * factor)
-            local d_my = ay - r - 2
+            local d_my = timeline_cy
             local alpha = string.format("%02X", 255 - math.floor((0.5 + 0.5 * factor) * 255))
             fallback_ass:new_event()
             fallback_ass:append(string.format("{\\pos(0,0)\\an7\\blur0\\bord1\\1c&HFFFFFF&\\3c&H111111&\\1a&H%s&\\3a&H%s&}", alpha, alpha))
@@ -314,7 +345,7 @@ local function update_visibility()
             draw_popout(hovered_group, avg_mx, ay - 1, ax, bx, dim, closest_dist, ay, size_max, mouse.y)
             
             local hovering_icon = false
-            if mouse.y >= (ay - 40) and mouse.y <= (ay - 2) and closest_dist <= 20 then
+            if mouse.y >= (ay - 8) and mouse.y <= (ay + size_max + 8) and closest_dist <= 20 then
                 hovering_icon = true
             end
             

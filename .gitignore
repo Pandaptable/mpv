@@ -9,5 +9,8 @@ mpv.log
 # (userid)
 sponsorblock.conf
 subtitles/
-script-opts/mpv-cut-settings.json
+mpv-opts/
 *.bgra
+markers/**/*.png
+__pycache__
+.ruff_cache
