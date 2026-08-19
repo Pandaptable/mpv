@@ -379,12 +379,16 @@ local function update_visibility()
 end
 
 local function on_metadata(_, metadata)
-    if not metadata then return end
-    
-    local comment = metadata["comment"] or metadata["Comment"] or metadata["COMMENT"]
+    local comment
+    if metadata then
+        comment = metadata["comment"] or metadata["Comment"] or metadata["COMMENT"]
+    end
+
     if not comment then
-        msg.warn("Steam Timeline script: No comment found in metadata")
-        return 
+        -- new file has no timeline metadata: drop markers from the previous clip
+        active_markers = {}
+        update_visibility()
+        return
     end
 
     if type(comment) == "string" and comment:match("^comment=") then
@@ -401,7 +405,9 @@ local function on_metadata(_, metadata)
 
     if not markers then
         msg.warn("Steam Timeline script: Failed to parse comment as JSON")
-        return 
+        active_markers = {}
+        update_visibility()
+        return
     end
 
     active_markers = {}

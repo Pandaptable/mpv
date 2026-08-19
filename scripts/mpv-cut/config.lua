@@ -31,9 +31,10 @@ ENCODE_SETTINGS = {
 	video_encoder = "h264_nvenc",
 	profile = "high",
 	preset = "p7",
-	rc = "vbr_hq",
+	rc = "vbr",
 	cq = 25,
 	audio_encoder = "aac",
+	audio_only_encoder = "libopus",
 	audio_bitrate = "128k",
 	audio_only = false,
 	audio_tracks = "all",
@@ -157,8 +158,12 @@ local function append_metadata_override(args, d, s)
 	local comment = probe_comment(d.inpath)
 	local filtered = filter_timeline_events(comment, tonumber(d.start_time), tonumber(d.end_time))
 	if filtered then
-		args[#args + 1] = "-movflags"
-		args[#args + 1] = "+use_metadata_tags"
+		local audio_enc = s.audio_only and (s.audio_only_encoder or s.audio_encoder) or s.audio_encoder
+		-- -movflags is only valid for the mov/mp4 muxer (mp4/m4a output)
+		if not s.audio_only or audio_enc == "aac" then
+			args[#args + 1] = "-movflags"
+			args[#args + 1] = "+use_metadata_tags"
+		end
 		args[#args + 1] = "-metadata"
 		args[#args + 1] = "comment=" .. utils.format_json(filtered)
 	end
@@ -166,6 +171,24 @@ end
 
 local function is_nvenc(enc)
 	return enc:match("nvenc$") ~= nil
+end
+
+local function is_av1(enc)
+	return enc:match("av1_nvenc$") ~= nil
+end
+
+local function get_valid_rc_list(enc)
+	if is_av1(enc) then
+		return { "constqp", "vbr", "cbr", "llvbr" }
+	end
+	return { "vbr", "cbr", "vbr_hq", "cbr_hq", "cbr_ld_hq" }
+end
+
+local function get_valid_profiles(enc)
+	if is_av1(enc) then
+		return { "main" }
+	end
+	return { "baseline", "main", "high" }
 end
 
 local function build_encode_args(d, output_path, overrides)
@@ -222,15 +245,21 @@ local function build_encode_args(d, output_path, overrides)
 	if not s.audio_only then
 		args[#args + 1] = "-c:v"
 		args[#args + 1] = s.video_encoder
-		args[#args + 1] = "-profile:v"
-		args[#args + 1] = s.profile
+		if not is_av1(s.video_encoder) then
+			args[#args + 1] = "-profile:v"
+			args[#args + 1] = s.profile
+		end
 
 		if is_nvenc(s.video_encoder) then
 			args[#args + 1] = "-preset"
 			args[#args + 1] = s.preset
 			args[#args + 1] = "-rc"
 			args[#args + 1] = s.rc
-			args[#args + 1] = "-cq"
+			if is_av1(s.video_encoder) and s.rc == "constqp" then
+				args[#args + 1] = "-qp"
+			else
+				args[#args + 1] = "-cq"
+			end
 			args[#args + 1] = tostring(s.cq)
 		else
 			args[#args + 1] = "-preset"
@@ -242,9 +271,10 @@ local function build_encode_args(d, output_path, overrides)
 		end
 	end
 
+	local audio_enc = s.audio_only and (s.audio_only_encoder or s.audio_encoder) or s.audio_encoder
 	args[#args + 1] = "-c:a"
-	args[#args + 1] = s.audio_encoder
-	if s.audio_encoder ~= "copy" then
+	args[#args + 1] = audio_enc
+	if audio_enc ~= "copy" then
 		args[#args + 1] = "-b:a"
 		args[#args + 1] = s.audio_bitrate
 	end
@@ -421,11 +451,10 @@ end
 
 local function get_output_ext(s)
 	if s.audio_only then
-		if s.audio_encoder == "aac" then
+		local enc = s.audio_only_encoder or s.audio_encoder
+		if enc == "aac" then
 			return ".m4a"
-		elseif s.audio_encoder == "libopus" then
-			return ".opus"
-		elseif s.audio_encoder == "libvorbis" then
+		elseif enc == "libopus" or enc == "libvorbis" then
 			return ".ogg"
 		else
 			return ".mka"
@@ -586,26 +615,19 @@ local function build_settings_menu()
 				hint = s.profile,
 				icon = "layers",
 				keep_open = true,
-				items = {
-					{
-						title = "high",
-						value = { setting = "profile", value = "high" },
-						active = s.profile == "high",
-						keep_open = true,
-					},
-					{
-						title = "main",
-						value = { setting = "profile", value = "main" },
-						active = s.profile == "main",
-						keep_open = true,
-					},
-					{
-						title = "baseline",
-						value = { setting = "profile", value = "baseline" },
-						active = s.profile == "baseline",
-						keep_open = true,
-					},
-				},
+				items = (function()
+					local items = {}
+					local profiles = get_valid_profiles(s.video_encoder)
+					for _, p in ipairs(profiles) do
+						items[#items + 1] = {
+							title = p,
+							value = { setting = "profile", value = p },
+							active = s.profile == p,
+							keep_open = true,
+						}
+					end
+					return items
+				end)(),
 			},
 			{
 				title = "Preset",
@@ -662,32 +684,28 @@ local function build_settings_menu()
 				hint = s.rc,
 				icon = "settings_ethernet",
 				keep_open = true,
-				items = {
-					{
-						title = "vbr_hq (VBR high quality)",
-						value = { setting = "rc", value = "vbr_hq" },
-						active = s.rc == "vbr_hq",
-						keep_open = true,
-					},
-					{
-						title = "cbr (constant bitrate)",
-						value = { setting = "rc", value = "cbr" },
-						active = s.rc == "cbr",
-						keep_open = true,
-					},
-					{
-						title = "cbr_hq",
-						value = { setting = "rc", value = "cbr_hq" },
-						active = s.rc == "cbr_hq",
-						keep_open = true,
-					},
-					{
-						title = "cbr_ld_hq",
-						value = { setting = "rc", value = "cbr_ld_hq" },
-						active = s.rc == "cbr_ld_hq",
-						keep_open = true,
-					},
-				},
+				items = (function()
+					local items = {}
+					local labels = {
+						vbr = "vbr (variable bitrate)",
+						cbr = "cbr (constant bitrate)",
+						vbr_hq = "vbr_hq",
+						cbr_hq = "cbr_hq",
+						cbr_ld_hq = "cbr_ld_hq",
+						constqp = "constqp (constant QP)",
+						llvbr = "llvbr (low latency vbr)",
+					}
+					local rc_list = get_valid_rc_list(s.video_encoder)
+					for _, rc in ipairs(rc_list) do
+						items[#items + 1] = {
+							title = labels[rc] or rc,
+							value = { setting = "rc", value = rc },
+							active = s.rc == rc,
+							keep_open = true,
+						}
+					end
+					return items
+				end)(),
 			},
 			{
 				title = "Quality (CQ/CRF)",
@@ -767,6 +785,38 @@ local function build_settings_menu()
 						title = "copy (no re-encode)",
 						value = { setting = "audio_encoder", value = "copy" },
 						active = s.audio_encoder == "copy",
+						keep_open = true,
+					},
+				},
+			},
+			{
+				title = "Audio-Only Encoder",
+				hint = s.audio_only_encoder,
+				icon = "headphones",
+				keep_open = true,
+				items = {
+					{
+						title = "libopus (ogg/opus)",
+						value = { setting = "audio_only_encoder", value = "libopus" },
+						active = s.audio_only_encoder == "libopus",
+						keep_open = true,
+					},
+					{
+						title = "libvorbis (ogg vorbis)",
+						value = { setting = "audio_only_encoder", value = "libvorbis" },
+						active = s.audio_only_encoder == "libvorbis",
+						keep_open = true,
+					},
+					{
+						title = "aac (m4a)",
+						value = { setting = "audio_only_encoder", value = "aac" },
+						active = s.audio_only_encoder == "aac",
+						keep_open = true,
+					},
+					{
+						title = "copy (mka, no re-encode)",
+						value = { setting = "audio_only_encoder", value = "copy" },
+						active = s.audio_only_encoder == "copy",
 						keep_open = true,
 					},
 				},
@@ -1010,6 +1060,13 @@ mp.register_script_message("mpv-cut-callback", function(json)
 			)
 		elseif event.value.setting then
 			ENCODE_SETTINGS[event.value.setting] = event.value.value
+			if event.value.setting == "video_encoder" and is_av1(ENCODE_SETTINGS.video_encoder) then
+				ENCODE_SETTINGS.profile = "main"
+				local valid_rc = { constqp = true, vbr = true, cbr = true, llvbr = true }
+				if not valid_rc[ENCODE_SETTINGS.rc] then
+					ENCODE_SETTINGS.rc = "vbr"
+				end
+			end
 			save_settings()
 			print(string.format("mpv-cut: %s = %s", event.value.setting, tostring(event.value.value)))
 		end
