@@ -43,6 +43,26 @@ ENCODE_SETTINGS = {
 	hwaccel = "cuda",
 }
 
+-- one-shot cut flags: never persisted, always reset to defaults after each cut
+local CUT_FLAG_DEFAULTS = { audio_only = false, audio_tracks = "all" }
+
+local function is_cut_flag(k)
+	return CUT_FLAG_DEFAULTS[k] ~= nil
+end
+
+local function reset_cut_flags()
+	local changed = {}
+	for k, default in pairs(CUT_FLAG_DEFAULTS) do
+		if ENCODE_SETTINGS[k] ~= default then
+			ENCODE_SETTINGS[k] = default
+			changed[#changed + 1] = k
+		end
+	end
+	if #changed > 0 then
+		print("mpv-cut: one-shot flags reset (" .. table.concat(changed, ", ") .. ")")
+	end
+end
+
 local settings_path = mp.command_native({ "expand-path", "~~/mpv-opts/mpv-cut-settings.json" })
 
 local function ensure_settings_dir()
@@ -61,9 +81,15 @@ end
 
 local function save_settings()
 	ensure_settings_dir()
+	local persistent = {}
+	for k, v in pairs(ENCODE_SETTINGS) do
+		if not is_cut_flag(k) then
+			persistent[k] = v
+		end
+	end
 	local f, err = io.open(settings_path, "w")
 	if f then
-		f:write(utils.format_json(ENCODE_SETTINGS))
+		f:write(utils.format_json(persistent))
 		f:close()
 	else
 		mp.msg.error("mpv-cut: failed to save settings: " .. tostring(err))
@@ -78,7 +104,9 @@ local function load_settings()
 		local ok, saved = pcall(utils.parse_json, content)
 		if ok and type(saved) == "table" then
 			for k, v in pairs(saved) do
-				ENCODE_SETTINGS[k] = v
+				if not is_cut_flag(k) then
+					ENCODE_SETTINGS[k] = v
+				end
 			end
 		end
 	end
@@ -232,14 +260,39 @@ local function build_encode_args(d, output_path, overrides)
 		args[#args + 1] = "-vn"
 	end
 
-	if s.audio_tracks == "all" then
-		args[#args + 1] = "-map"
-		args[#args + 1] = "0:a"
-	elseif type(s.audio_tracks) == "table" then
-		for _, idx in ipairs(s.audio_tracks) do
+	-- map audio only for tracks that actually exist in this file
+	local track_count = get_audio_track_count()
+	local has_audio_map = false
+	if track_count > 0 then
+		if s.audio_tracks == "all" then
 			args[#args + 1] = "-map"
-			args[#args + 1] = "0:a:" .. idx
+			args[#args + 1] = "0:a"
+			has_audio_map = true
+		elseif type(s.audio_tracks) == "table" then
+			local valid = {}
+			for _, idx in ipairs(s.audio_tracks) do
+				if type(idx) == "number" and idx >= 0 and idx < track_count then
+					valid[#valid + 1] = idx
+				end
+			end
+			if #s.audio_tracks > 0 and #valid == 0 then
+				-- every configured track is missing from this file: keep what exists
+				args[#args + 1] = "-map"
+				args[#args + 1] = "0:a"
+				has_audio_map = true
+			else
+				for _, idx in ipairs(valid) do
+					args[#args + 1] = "-map"
+					args[#args + 1] = "0:a:" .. idx
+					has_audio_map = true
+				end
+			end
 		end
+	end
+
+	if s.audio_only and not has_audio_map then
+		print("mpv-cut: no audio tracks in this file - cannot make an audio-only cut")
+		return nil
 	end
 
 	if not s.audio_only then
@@ -271,12 +324,14 @@ local function build_encode_args(d, output_path, overrides)
 		end
 	end
 
-	local audio_enc = s.audio_only and (s.audio_only_encoder or s.audio_encoder) or s.audio_encoder
-	args[#args + 1] = "-c:a"
-	args[#args + 1] = audio_enc
-	if audio_enc ~= "copy" then
-		args[#args + 1] = "-b:a"
-		args[#args + 1] = s.audio_bitrate
+	if has_audio_map then
+		local audio_enc = s.audio_only and (s.audio_only_encoder or s.audio_encoder) or s.audio_encoder
+		args[#args + 1] = "-c:a"
+		args[#args + 1] = audio_enc
+		if audio_enc ~= "copy" then
+			args[#args + 1] = "-b:a"
+			args[#args + 1] = s.audio_bitrate
+		end
 	end
 
 	args[#args + 1] = output_path
@@ -336,15 +391,40 @@ local function run_ffmpeg_with_progress(args, duration_sec, on_done)
 				.. "b %d %d %d %d %d %d "
 				.. "l %d %d "
 				.. "b %d %d %d %d %d %d",
-			x + r, y,
-			x2 - r, y,
-			x2 - r + c, y, x2, y + r - c, x2, y + r,
-			x2, y2 - r,
-			x2, y2 - r + c, x2 - r + c, y2, x2 - r, y2,
-			x + r, y2,
-			x + r - c, y2, x, y2 - r + c, x, y2 - r,
-			x, y + r,
-			x, y + r - c, x + r - c, y, x + r, y
+			x + r,
+			y,
+			x2 - r,
+			y,
+			x2 - r + c,
+			y,
+			x2,
+			y + r - c,
+			x2,
+			y + r,
+			x2,
+			y2 - r,
+			x2,
+			y2 - r + c,
+			x2 - r + c,
+			y2,
+			x2 - r,
+			y2,
+			x + r,
+			y2,
+			x + r - c,
+			y2,
+			x,
+			y2 - r + c,
+			x,
+			y2 - r,
+			x,
+			y + r,
+			x,
+			y + r - c,
+			x + r - c,
+			y,
+			x + r,
+			y
 		)
 	end
 
@@ -465,6 +545,9 @@ end
 
 local function run_encode_action(d, output_path)
 	local args = build_encode_args(d, output_path)
+	if not args then
+		return
+	end
 	run_ffmpeg_with_progress(args, tonumber(d.duration), function(success, result, error)
 		if success then
 			copy_to_clipboard("Done", output_path)
@@ -487,6 +570,9 @@ ACTIONS.COPY_ENCODE = function(d)
 	local output_path = utils.join_path(d.indir, "ENCODE_" .. d.infile_noext .. ext)
 
 	local args = build_encode_args(d, output_path)
+	if not args then
+		return
+	end
 	local shell_args = {}
 	for i, v in ipairs(args) do
 		if i == 1 then
@@ -511,6 +597,19 @@ end
 ACTIONS.LIST = function(d)
 	local inpath = mp.get_property("path")
 
+	-- build output args first: abort before touching the list if the current
+	-- audio settings can't be satisfied by this file (e.g. audio-only, no audio)
+	local full_args
+	do
+		local s = ENCODE_SETTINGS
+		local ext = get_output_ext(s)
+		local dummy_out = utils.join_path(d.indir, "DUMMY_" .. d.infile_noext .. ext)
+		full_args = build_encode_args(d, dummy_out)
+	end
+	if not full_args then
+		return
+	end
+
 	-- write traditional .list entry (channel:start:end)
 	local list_path = inpath .. ".list"
 	local f = io.open(list_path, "a")
@@ -526,14 +625,10 @@ ACTIONS.LIST = function(d)
 	-- write current encoder settings as ffmpeg output args
 	local args_path = inpath .. ".list.args"
 	do
-		local s = ENCODE_SETTINGS
-		local ext = get_output_ext(s)
-		local dummy_out = utils.join_path(d.indir, "DUMMY_" .. d.infile_noext .. ext)
-		local full_args = build_encode_args(d, dummy_out)
-
 		-- extract output options: everything after -i <inpath> and before output,
 		-- skipping per-cut metadata override (doesn't apply to batch make_cuts)
 		local out_opts = {}
+
 		local past_input = false
 		local skip_next = false
 		for i = 1, #full_args - 1 do
@@ -692,7 +787,7 @@ local function build_settings_menu()
 						vbr_hq = "vbr_hq",
 						cbr_hq = "cbr_hq",
 						cbr_ld_hq = "cbr_ld_hq",
-						constqp = "constqp (constant QP)",
+						constqp = "CQP (constant QP)",
 						llvbr = "llvbr (low latency vbr)",
 					}
 					local rc_list = get_valid_rc_list(s.video_encoder)
@@ -892,7 +987,7 @@ local function build_settings_menu()
 				},
 			},
 			{
-				title = "Audio Only",
+				title = "Audio Only (one-shot, resets after cut)",
 				hint = s.audio_only and "yes" or "no",
 				icon = "music_note",
 				keep_open = true,
@@ -929,7 +1024,25 @@ local function build_settings_menu()
 				keep_open = true,
 				items = (function()
 					local items = {}
-					local max_tracks = math.max(1, math.min(get_audio_track_count(), 8))
+					local track_count = get_audio_track_count()
+					if track_count == 0 then
+						items[#items + 1] = {
+							title = "No audio tracks in this file",
+							hint = "-",
+							active = true,
+							disabled = true,
+							keep_open = true,
+						}
+						return items
+					end
+					items[#items + 1] = {
+						title = "All tracks",
+						hint = "reset",
+						value = { setting = "audio_tracks", value = "all" },
+						active = s.audio_tracks == "all",
+						keep_open = true,
+					}
+					local max_tracks = math.min(track_count, 8)
 					for i = 0, max_tracks - 1 do
 						local selected = s.audio_tracks == "all"
 							or (
@@ -1081,3 +1194,6 @@ mp.register_script_message("uosc-version", function()
 end)
 
 mp.add_key_binding(KEY_SETTINGS, "mpv-cut-settings", open_settings_menu)
+
+-- consumed by main.lua after every cut action: one-shot flags go back to defaults
+RESET_CUT_FLAGS = reset_cut_flags

@@ -246,6 +246,9 @@ local function cut(start_time, end_time)
 	mp.msg.info(ACTION)
 	mp.msg.info(table_to_str(d))
 	ACTIONS[ACTION](d)
+	if RESET_CUT_FLAGS then
+		RESET_CUT_FLAGS()
+	end
 end
 
 local function put_time()
